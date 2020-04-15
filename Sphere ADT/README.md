@@ -1,4 +1,4 @@
-# Moon Rover
+# Graphics Programming
 
 You must have installed CMake in your PC.
 
