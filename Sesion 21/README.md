@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-# Sphere ADT
-=======
 # Graphics Programming
->>>>>>> aaa6eb3d061a5a34b12f37788e19ddc59dd281a3
 
 You must have installed CMake in your PC.
 
