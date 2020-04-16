@@ -1,4 +1,4 @@
-# Moon Rover
+# Sphere ADT
 
 You must have installed CMake in your PC.
 

@@ -2,9 +2,11 @@
 
 in vec3 vertexPosition;
 in vec3 vertexColor;
+
 uniform mat4 modelMatrix;
 uniform mat4 viewMatrix;
 uniform mat4 projMatrix;
+
 out vec3 vertexColorToFS;
 
 void main() {
