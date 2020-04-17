@@ -5,8 +5,30 @@
 #include <stdio.h>
 #include <math.h>
 #include <vector>
+#include <time.h>
 
-#define toRadians(deg) deg * M_PI / 180.0
+
+#define STACKS 20
+#define MERIDIANS 40
+#define LENGTH 3.0
+
+#define TOP_RADIO    0.45
+#define BOTTOM_RADIO 0.015
+
+
+#define INCREMENT (360.0 / MERIDIANS)
+#define CYLINDER_VERTEX ((MERIDIANS + 1) * (STACKS * 2))
+
+static GLuint vertexColorLoc;
+
+typedef struct {
+	float r;
+	float g;
+	float b;
+} Color;
+
+Color colorBase = {.r = 0.4, .g = 0.2, .b = 0.8};
+Color colorTop  = {.r = 0.1, .g = 0.1, .b = 0.1};
 
 typedef enum { IDLE, LEFT, RIGHT, UP, DOWN, FRONT, BACK } MOTION_TYPE;
 
@@ -14,13 +36,16 @@ typedef float vec3[3];
 
 // What
 static Mat4   modelMatrix, projectionMatrix, viewMatrix;
-static GLuint programId1, vertexPositionLoc,  vertexNormalLoc, modelMatrixLoc,  projectionMatrixLoc,  viewMatrixLoc;
-static GLuint programId2, vertexPositionLoc2, modelColorLoc2,  modelMatrixLoc2, projectionMatrixLoc2, viewMatrixLoc2;
+static GLuint programId1, vertexPositionLoc,  vertexNormalLoc, modelMatrixLoc;  
+static GLuint projectionMatrixLoc,  viewMatrixLoc,  projectionMatrixLoc2, viewMatrixLoc2;
+static GLuint programId2, vertexPositionLoc2, modelColorLoc2,  modelMatrixLoc2;
 static GLuint ambientLightLoc, materialALoc, materialDLoc;
 static GLuint materialSLoc, cameraPositionLoc;
 
 GLuint cubeVA, circleVA, roomVA, rhombusVA, rhombusBuffer[3];
 GLuint roomBuffers[3];
+
+GLuint bufferId[3];
 
 static MOTION_TYPE motionType      = IDLE;
 static MOTION_TYPE lightMotionType = IDLE;
@@ -88,6 +113,8 @@ static void initShaders() {
 	glLinkProgram(programId2);
 
 	vertexPositionLoc2   = glGetAttribLocation(programId2, "vertexPosition");
+	vertexColorLoc		 = glGetAttribLocation(programId2, "vertexColor");
+	
 	modelMatrixLoc2      = glGetUniformLocation(programId2, "modelMatrix");
 	viewMatrixLoc2       = glGetUniformLocation(programId2, "viewMatrix");
 	projectionMatrixLoc2 = glGetUniformLocation(programId2, "projectionMatrix");
@@ -112,45 +139,106 @@ static void initLights() {
 }
 
 static void initLightCubes() {
+
+	srand(time(0)); 
+	// printf("%d\n", rand());
 	float l1 = -0.2, l2 = 0.2;
 
-	const float meridians = 40;
+	const float meridians = MERIDIANS;
 	float angle = 0;
 	const float total_degrees = 360.0;
 	const float increment = total_degrees / meridians;
-	const float radio = l2;
+	const float stack_width = (LENGTH / STACKS);
 
-	int size = meridians * 3;
+
+	// Every stack has twice the meridians up and down.
+	int size = ((meridians + 1) * 3) * (STACKS * 2);
+	int numberOfIndexes = (STACKS * 2) * (meridians + 1) + STACKS;
+
 	float* circle = new float[size];
+	float* circleColors = new float[size];
+	GLushort* circleIndexes = new GLushort[numberOfIndexes];
+	
+	// printf("Value of pi: %f, size of circle: %d\n", M_PI, sizeof(circle));
 
-	printf("Value of pi: %f, size of circle: %d\n", M_PI, sizeof(circle));
+	int posIndex = 0;
+	int colIndex = 0;
+	int indIndex = 0;
+	int j;
+	float width = 0.2, s_width = 0.2;
+	float radio = BOTTOM_RADIO;
+	float radioDecrement = ((TOP_RADIO - BOTTOM_RADIO) / (float) (STACKS + 1));
 
-	for(int i = 0; i < meridians; ++i, angle += increment) {
-		circle[i * 3]     = radio * cos(to_radians(angle));
-		circle[i * 3 + 1] = l2;
-		circle[i * 3 + 2] = radio * sin(to_radians(angle));
-		printf("degrees: %f\n", angle);
-		printf("%.2f %.2f %.2f\n", circle[i * 3], circle[i * 3 + 1], circle[i * 3 + 2]);
+	printf("Radio decrement %f\n", radioDecrement);
+	for(j = 0; j < STACKS; ++j, width += stack_width, radio += radioDecrement ) {
+		for(int i = 0; i < meridians + 1; ++i, angle += increment, ++posIndex) {
+			circle[posIndex * 6]     = radio  * cos(to_radians(angle));
+			circle[posIndex * 6 + 1] = width;
+			circle[posIndex * 6 + 2] = radio * sin(to_radians(angle));
+
+
+			circle[posIndex * 6 + 3] = (radio + radioDecrement) * cos(to_radians(angle));
+			circle[posIndex * 6 + 4] = width + stack_width;
+			circle[posIndex * 6 + 5] = (radio + radioDecrement) * sin(to_radians(angle));
+			// radio -= radioDecrement;
+			// printf("degrees: %f\n", angle);
+			// printf("%.2f %.2f %.2f\n", circle[i * 3], circle[i * 3 + 1], circle[i * 3 + 2]);
+		}
+		Color tempColor;
+		/* Modulo 256 and then Divide between 256 to get number bwtween 0 and 1*/
+		// we want 20% of the random part, 0.20 * 256.0 = 1280.0
+		tempColor.r = (colorBase.r * 0.8) +  ((rand() & 255) / 1280.0);
+		tempColor.g = (colorBase.g * 0.8) +  ((rand() & 255) / 1280.0);
+		tempColor.b = (colorBase.b * 0.8) +  ((rand() & 255) / 1280.0);
+
+		for(int i = 0; i < meridians + 1; ++i, ++colIndex) {
+			circleColors[colIndex * 6]     = tempColor.r;
+			circleColors[colIndex * 6 + 1] = tempColor.g;
+			circleColors[colIndex * 6 + 2] = tempColor.b;
+
+			circleColors[colIndex * 6 + 3]  = tempColor.r;
+			circleColors[colIndex * 6 + 4] =  tempColor.g;
+			circleColors[colIndex * 6 + 5] =  tempColor.b;
+		}
+
+		for(int a = 0; a < (meridians + 1) * 2; a++, indIndex++){
+			circleIndexes[indIndex + j] = indIndex;
+		}
+		circleIndexes[indIndex + j] = 0xFFFF;
 	}
 
-	float positions[] = {l1, l1, l2, l2, l1, l2, l1, l2, l2, l2, l1, l2, l2, l2, l2, l1, l2, l2,  // Frente
-						 l2, l1, l1, l1, l1, l1, l2, l2, l1, l1, l1, l1, l1, l2, l1, l2, l2, l1,  // Atras
-						 l1, l1, l1, l1, l1, l2, l1, l2, l1, l1, l1, l2, l1, l2, l2, l1, l2, l1,  // Izquierda
-						 l2, l2, l1, l2, l2, l2, l2, l1, l1, l2, l2, l2, l2, l1, l2, l2, l1, l1,  // Derecha
-						 l1, l1, l1, l2, l1, l1, l1, l1, l2, l2, l1, l1, l2, l1, l2, l1, l1, l2,  // Abajo
-						 l2, l2, l1, l1, l2, l1, l2, l2, l2, l1, l2, l1, l1, l2, l2, l2, l2, l2   // Arriba
-	};
+	for(int i = 0; i < (meridians + 1) * STACKS; ++i)
+		printf("%.4f %.4f %.4f\n%.4f %.4f %.4f\n\n", 
+		circle[i * 6], circle[i * 6 + 1], circle[i * 6 + 2], circle[i * 6 + 3],
+		circle[i * 6 + 4],circle[i * 6 + 5]);
+
+	// for(int a = 0; a < meridians * 2 * STACKS + STACKS; a++, indIndex++)
+	// 		printf("%d\n",circleIndexes[a]);
+
+
 
 	// printf("%\nPositions sized: %d\n", sizeof(positions) / sizeof(float));
 	glUseProgram(programId2);
 	glGenVertexArrays(1, &circleVA);
 	glBindVertexArray(circleVA);
-	GLuint bufferId;
-	glGenBuffers(1, &bufferId);
-	glBindBuffer(GL_ARRAY_BUFFER, bufferId);
+	glGenBuffers(3, bufferId);
+
+	glBindBuffer(GL_ARRAY_BUFFER, bufferId[0]);
 	glBufferData(GL_ARRAY_BUFFER, size * sizeof(float), circle, GL_STATIC_DRAW);
 	glVertexAttribPointer(vertexPositionLoc2, 3, GL_FLOAT, 0, 0, 0);
 	glEnableVertexAttribArray(vertexPositionLoc2);
+
+	glBindBuffer(GL_ARRAY_BUFFER, bufferId[1]);
+	glBufferData(GL_ARRAY_BUFFER, size * sizeof(float), circleColors, GL_STATIC_DRAW);
+	glVertexAttribPointer(vertexColorLoc, 3, GL_FLOAT, 0, 0, 0);
+	glEnableVertexAttribArray(vertexColorLoc);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bufferId[2]);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, numberOfIndexes * sizeof(float), circleIndexes, GL_STATIC_DRAW);
+
+	glEnable(GL_PRIMITIVE_RESTART);
+	glPrimitiveRestartIndex(0xFFFF);
+
 }
 
 static void initRoom() {
@@ -312,25 +400,32 @@ static void displayFunc() {
 	glUniformMatrix4fv(viewMatrixLoc2, 1, true, viewMatrix.values);
 
 	//	Dibujar fuente de luz roja
-	glUniform3f(modelColorLoc2, 1, 0, 0);
-	mIdentity(&modelMatrix);
-	translate(&modelMatrix, -2, 0, 0);
-	glUniformMatrix4fv(modelMatrixLoc2, 1, true, modelMatrix.values);
-	glDrawArrays(GL_TRIANGLE_FAN, 0, 40);
+	// glUniform3f(modelColorLoc2, 1, 0, 0);
+	// mIdentity(&modelMatrix);
+	// translate(&modelMatrix, -2, 0, 0);
+	// glUniformMatrix4fv(modelMatrixLoc2, 1, true, modelMatrix.values);
+	// glDrawArrays(GL_LINE_STRIP, 0, CYLINDER_VERTEX);
 
 	//	Dibujar fuente de luz verde
+	// glUniform3f(modelColorLoc2, 0, 1, 0);
+	// mIdentity(&modelMatrix);
+	// translate(&modelMatrix, greenLightX, greenLightY, greenLightZ);
+	// glUniformMatrix4fv(modelMatrixLoc2, 1, true, modelMatrix.values);
+	// glDrawArrays(GL_TRIANGLE_STRIP, 0, CYLINDER_VERTEX);
+
 	glUniform3f(modelColorLoc2, 0, 1, 0);
 	mIdentity(&modelMatrix);
 	translate(&modelMatrix, greenLightX, greenLightY, greenLightZ);
 	glUniformMatrix4fv(modelMatrixLoc2, 1, true, modelMatrix.values);
-	glDrawArrays(GL_TRIANGLE_FAN, 0, 40);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bufferId[2]);
+	glDrawElements(GL_TRIANGLE_STRIP, (MERIDIANS + 1) * (STACKS * 2) + STACKS, GL_UNSIGNED_SHORT, 0);
 
 	//	Dibujar fuente de luz azul
-	glUniform3f(modelColorLoc2, 0, 0, 1);
-	mIdentity(&modelMatrix);
-	translate(&modelMatrix,  2, 0, 0);
-	glUniformMatrix4fv(modelMatrixLoc2, 1, true, modelMatrix.values);
-	glDrawArrays(GL_TRIANGLE_FAN, 0, 40);
+	// glUniform3f(modelColorLoc2, 0, 0, 1);
+	// mIdentity(&modelMatrix);
+	// translate(&modelMatrix,  2, 0, 0);
+	// glUniformMatrix4fv(modelMatrixLoc2, 1, true, modelMatrix.values);
+	// glDrawArrays(GL_POINTS, 0, CYLINDER_VERTEX);
 
 	glutSwapBuffers();
 }

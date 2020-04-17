@@ -1,8 +1,10 @@
 #version 400
 
-uniform vec3 modelColor; 
+uniform vec3 modelColor;
+in vec3 vertexColorToFS;
+
 out vec4 pixelColor; 
 
 void main() { 
-  pixelColor = vec4(modelColor, 1.0); 
+  pixelColor = vec4(vertexColorToFS, 1.0); 
 } 
