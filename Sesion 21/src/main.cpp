@@ -13,7 +13,7 @@ typedef enum { IDLE, LEFT, RIGHT, UP, DOWN, FRONT, BACK } MOTION_TYPE;
 typedef float vec3[3];
 
 static Mat4   modelMatrix, projectionMatrix, viewMatrix;
-static GLuint programId1, vertexPositionLoc,  vertexNormalLoc, modelMatrixLoc,  projectionMatrixLoc,  viewMatrixLoc;
+static GLuint programId1, vertexPositionLoc,  vertexNormalLoc, vertexTexCoordLoc, modelMatrixLoc,  projectionMatrixLoc,  viewMatrixLoc;
 static GLuint programId2, vertexPositionLoc2, modelColorLoc2,  modelMatrixLoc2, projectionMatrixLoc2, viewMatrixLoc2;
 static GLuint ambientLightLoc, materialALoc, materialDLoc;
 static GLuint materialSLoc, cameraPositionLoc;
@@ -59,12 +59,22 @@ static void initTexture(const char* filename, GLuint textureId) {
 	unsigned int width, height;
 	glBindTexture(GL_TEXTURE_2D, textureId);
 	loadBMP(filename, &data, &width, &height);
-	printf("%d, %d\n", width, height);
+	// printf("%d, %d\n", width, height);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_BGR, GL_UNSIGNED_BYTE, data);
+	
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
 }
 
 static void initTextures() {
 	glGenTextures(4, textures);
 	initTexture("textures/Brick.bmp",   textures[0]);
+	initTexture("textures/Ceiling.bmp", textures[1]);
+	initTexture("textures/Floor.bmp",   textures[2]);
+	initTexture("textures/Square.bmp",  textures[3]);
 }
 
 
@@ -80,6 +90,7 @@ static void initShaders() {
 
 	vertexPositionLoc   = glGetAttribLocation(programId1, "vertexPosition");
 	vertexNormalLoc     = glGetAttribLocation(programId1, "vertexNormal");
+	vertexTexCoordLoc   = glGetAttribLocation(programId1, "vertexTexcoord");
 	modelMatrixLoc      = glGetUniformLocation(programId1, "modelMatrix");
 	viewMatrixLoc       = glGetUniformLocation(programId1, "viewMatrix");
 	projectionMatrixLoc = glGetUniformLocation(programId1, "projMatrix");
@@ -163,11 +174,23 @@ static void initRoom() {
 					    0, -1,  0,  0, -1,  0,  0, -1,  0,  0, -1,  0,  0, -1,  0,  0, -1,  0   // Arriba
 	};
 
+	float wh = (float) ROOM_WIDTH / ROOM_HEIGHT;
+	float dh = (float) ROOM_DEPTH / ROOM_HEIGHT;
+	float dw = (float) ROOM_DEPTH / ROOM_WIDTH;
+
+	float texcoords[] = {	0, 2,    0, 0,   2 * wh, 0,   2 * wh, 0,   2 * wh, 2,   0, 2,
+							0, 2,    0, 0,   2 * wh, 0,   2 * wh, 0,   2 * wh, 2,   0, 2,
+							2*dh ,2, 2*dh,0,    0,0,        0,0,          0,2,     2*dh, 2,
+							0, 2,    0,0,     2*dh,0,        2*dh,0,   2*dh,2,     0,2,
+							0,0,     2*dw,0,     2*dw,2,        2*dw,2,   0,2,     0,0,
+							2*dw,0,     0,0,     0,2,        0,2,   2*dw,2,     2*dw,0
+						};
+
 	glUseProgram(programId1);
 	glGenVertexArrays(1, &roomVA);
 	glBindVertexArray(roomVA);
-	GLuint buffers[2];
-	glGenBuffers(2, buffers);
+	GLuint buffers[3];
+	glGenBuffers(3, buffers);
 
 	glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(positions), positions, GL_STATIC_DRAW);
@@ -178,6 +201,11 @@ static void initRoom() {
 	glBufferData(GL_ARRAY_BUFFER, sizeof(normals), normals, GL_STATIC_DRAW);
 	glVertexAttribPointer(vertexNormalLoc, 3, GL_FLOAT, 0, 0, 0);
 	glEnableVertexAttribArray(vertexNormalLoc);
+
+	glBindBuffer(GL_ARRAY_BUFFER, buffers[2]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(texcoords), texcoords, GL_STATIC_DRAW);
+	glVertexAttribPointer(vertexTexCoordLoc, 2, GL_FLOAT, 0, 0, 0);
+	glEnableVertexAttribArray(vertexTexCoordLoc);
 }
 
 static void crossProduct(vec3 p1, vec3 p2, vec3 p3, vec3 res) {
@@ -220,7 +248,6 @@ static void initRhombus() {
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indexes), indexes, GL_STATIC_DRAW);
 }
 
-
 static void displayFunc() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -259,7 +286,7 @@ static void displayFunc() {
 	glUniformMatrix4fv(viewMatrixLoc, 1, true, viewMatrix.values);
 	glUniform3f(cameraPositionLoc, cameraX, 0, cameraZ);
 
-//	Env�o de la posici�n de la fuente de luz verde
+//	Envío de la posici�n de la fuente de luz verde
 	lights[16] = greenLightX;
 	lights[17] = greenLightY;
 	lights[18] = greenLightZ;
@@ -273,7 +300,12 @@ static void displayFunc() {
 	mIdentity(&modelMatrix);
 	glUniformMatrix4fv(modelMatrixLoc, 1, true, modelMatrix.values);
 	glBindVertexArray(roomVA);
-	glDrawArrays(GL_TRIANGLES, 0, 36);
+	glBindTexture(GL_TEXTURE_2D, textures[0]);
+	glDrawArrays(GL_TRIANGLES, 0, 24);
+	glBindTexture(GL_TEXTURE_2D, textures[2]);
+	glDrawArrays(GL_TRIANGLES, 24, 6);
+	glBindTexture(GL_TEXTURE_2D, textures[1]);
+	glDrawArrays(GL_TRIANGLES, 30, 6);
 
 //	Dibujar el rombo frontal
 	translate(&modelMatrix, 2, 1, -5);
