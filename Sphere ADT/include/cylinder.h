@@ -1,10 +1,8 @@
 #ifndef CYLINDER_H_
 #define CYLINDER_H_
 
-
 #include <GL/glew.h>
 #include <GL/freeglut.h>
-
 
 typedef struct {
     float r;
@@ -21,6 +19,7 @@ typedef struct {
     short sides;
     short stacks;
     uint  indexBuffLoc;
+    int vertexArray;
     ColorRGB bottomColor;
     ColorRGB topColor;
 }CylinderStr;

@@ -8,41 +8,15 @@
 #include <vector>
 #include <time.h>
 
-
-#define STACKS 25
-#define MERIDIANS 8
-#define LENGTH 2.0
-
-#define TOP_RADIO    0.40
-#define BOTTOM_RADIO 0.40
-
 Cylinder vasito;
-
-float length = 1.2, topRadius = 0.45, bottomRadius = 0.35;
-short sides = 8, stacks = 25;	
+float length, topRadius, bottomRadius;
+short sides, stacks;	
+static GLuint vertexColorLoc;
 ColorRGB ct = {.r = 1.0, .g = 0.0, .b = 0.0}, cb = {.r = 0.0, .g =  0.0, .b = 1.0};
 
-
-
-#define INCREMENT (360.0 / MERIDIANS)
-
-
-static GLuint vertexColorLoc;
-
-typedef struct {
-	float r;
-	float g;
-	float b;
-} Color;
-
-Color colorTop  = {.r = 0.1, .g = 0.1, .b = 0.1};
-Color colorBase = {.r = 0.8, .g = 0.4, .b = 0.2};
-
 typedef enum { IDLE, LEFT, RIGHT, UP, DOWN, FRONT, BACK } MOTION_TYPE;
-
 typedef float vec3[3];
 
-// What
 static Mat4   modelMatrix, projectionMatrix, viewMatrix;
 static GLuint programId1, vertexPositionLoc,  vertexNormalLoc, modelMatrixLoc;  
 static GLuint projectionMatrixLoc,  viewMatrixLoc,  projectionMatrixLoc2, viewMatrixLoc2;
@@ -50,7 +24,7 @@ static GLuint programId2, vertexPositionLoc2, modelColorLoc2,  modelMatrixLoc2;
 static GLuint ambientLightLoc, materialALoc, materialDLoc;
 static GLuint materialSLoc, cameraPositionLoc;
 
-GLuint cubeVA, circleVA, roomVA, rhombusVA, rhombusBuffer[3];
+GLuint cubeVA, circleVA, roomVA;
 GLuint roomBuffers[3];
 
 GLuint bufferId[3];
@@ -147,10 +121,7 @@ static void initLightCubes() {
 
 	vasito = cylinder_create(length, bottomRadius, topRadius, sides, stacks, cb, ct);
 
-	glUseProgram(programId2);
-	glGenVertexArrays(1, &circleVA);
-	glBindVertexArray(circleVA);
-	
+	glUseProgram(programId2);	
 	cylinder_bind(vasito, vertexPositionLoc2, vertexColorLoc, 0);
 
 }
@@ -199,42 +170,6 @@ static void crossProduct(vec3 p1, vec3 p2, vec3 p3, vec3 res) {
 	res[0] = u[1] * v[2] - u[2] * v[1];
 	res[1] = u[2] * v[0] - u[0] * v[2];
 	res[2] = u[0] * v[1] - u[1] * v[0];
-}
-
-static void initRhombus() {
-	float  positions[] = { 0.0, 1.0, 0.6,  -0.7, 0.0, 0.0,  0.7, 0.0, 0.0,  0.0, -1.0, 0.6};
-	float  normals[12];
-	GLuint indexes[]   = { 0, 1, 2,  1, 3, 2};
-
-	crossProduct(positions, positions + 3, positions + 6, normals);
-	crossProduct(positions + 3, positions + 9, positions + 6, normals + 9);
-	int i;
-	for(i = 0; i < 3; i ++) {
-		normals[i + 3] = normals[i] + normals[i + 9];
-		normals[i + 6] = normals[i] + normals[i + 9];
-	}
-	//	printf("%.1f, %.1f, %.1f\n", normals[0], normals[1], normals[2]);
-	//	printf("%.1f, %.1f, %.1f\n", normals[3], normals[4], normals[5]);
-	//	printf("%.1f, %.1f, %.1f\n", normals[6], normals[7], normals[8]);
-	//	printf("%.1f, %.1f, %.1f\n", normals[9], normals[10], normals[11]);
-
-	glUseProgram(programId1);
-	glGenVertexArrays(1, &rhombusVA);
-	glBindVertexArray(rhombusVA);
-	glGenBuffers(3, rhombusBuffer);
-
-	glBindBuffer(GL_ARRAY_BUFFER, rhombusBuffer[0]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(positions), positions, GL_STATIC_DRAW);
-	glVertexAttribPointer(vertexPositionLoc, 3, GL_FLOAT, 0, 0, 0);
-	glEnableVertexAttribArray(vertexPositionLoc);
-
-	glBindBuffer(GL_ARRAY_BUFFER, rhombusBuffer[1]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(normals), normals, GL_STATIC_DRAW);
-	glVertexAttribPointer(vertexNormalLoc, 3, GL_FLOAT, 0, 0, 0);
-	glEnableVertexAttribArray(vertexNormalLoc);
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, rhombusBuffer[2]);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indexes), indexes, GL_STATIC_DRAW);
 }
 
 static void displayFunc() {
@@ -291,43 +226,18 @@ static void displayFunc() {
 	glBindVertexArray(roomVA);
 	glDrawArrays(GL_TRIANGLES, 0, 36);
 
-	//	Dibujar el rombo frontal
-	translate(&modelMatrix, 2, 1, -5);
-	glUniformMatrix4fv(modelMatrixLoc, 1, true, modelMatrix.values);
-	glBindVertexArray(rhombusVA);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, rhombusBuffer[2]);
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
-	//	Dibujar el rombo derecho
-	mIdentity(&modelMatrix);
-	translate(&modelMatrix, ROOM_WIDTH / 2 - 1, 0, 0);
-	rotateY(&modelMatrix, -90);
-	glUniformMatrix4fv(modelMatrixLoc, 1, true, modelMatrix.values);
-	glBindVertexArray(rhombusVA);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, rhombusBuffer[2]);
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
 	//	Envío de proyección y vista al programa 2
 	glUseProgram(programId2);
-	glBindVertexArray(circleVA);
 	glUniformMatrix4fv(projectionMatrixLoc2, 1, true, projectionMatrix.values);
 	glUniformMatrix4fv(viewMatrixLoc2, 1, true, viewMatrix.values);
 
-	//	Dibujar fuente de luz roja
-	mIdentity(&modelMatrix);
-	translate(&modelMatrix, -2, 0, 0);
-	glUniformMatrix4fv(modelMatrixLoc2, 1, true, modelMatrix.values);
-	cylinder_draw(vasito);
-
+	// Dibujar cilindro movible
 	mIdentity(&modelMatrix);
 	translate(&modelMatrix, greenLightX, greenLightY, greenLightZ);
+	static int angle = 0;
+	rotateX(&modelMatrix, angle += 1);
 	glUniformMatrix4fv(modelMatrixLoc2, 1, true, modelMatrix.values);
-	cylinder_draw(vasito);
 
-	//	Dibujar fuente de luz azul
-	mIdentity(&modelMatrix);
-	translate(&modelMatrix,  2, 0, 0);
-	glUniformMatrix4fv(modelMatrixLoc2, 1, true, modelMatrix.values);
 	cylinder_draw(vasito);
 
 	glutSwapBuffers();
@@ -381,10 +291,14 @@ static void keyPressedFunc(unsigned char key, int x, int y) {
 }
 
 int main(int argc, char **argv) {
-	printf("Length, radio top, radius bottom: \n");
-	scanf("%f %f %f", &length, &topRadius, &bottomRadius);
-	printf("sides and stacks: \n");
-	scanf("%d %d", &sides, &stacks);
+	// printf("Length, radio top, radius bottom: \n");
+	// scanf("%f %f %f", &length, &topRadius, &bottomRadius);
+	// printf("sides and stacks: \n");
+	// scanf("%d %d", &sides, &stacks);
+
+	length = 2.0; topRadius = 1.5; bottomRadius = 0.5;
+	sides = 40; stacks = 25;
+
 
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_DEPTH);
@@ -407,7 +321,6 @@ int main(int argc, char **argv) {
     initLights();
     initLightCubes();
     initRoom();
-    initRhombus();
     
 	glClearColor(0.1, 0.1, 0.1, 1.0);
     glutMainLoop();
