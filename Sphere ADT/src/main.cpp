@@ -16,9 +16,16 @@
 #define TOP_RADIO    0.40
 #define BOTTOM_RADIO 0.40
 
+Cylinder vasito;
+
+float length = 1.2, topRadius = 0.45, bottomRadius = 0.35;
+short sides = 8, stacks = 25;	
+ColorRGB ct = {.r = 1.0, .g = 0.0, .b = 0.0}, cb = {.r = 0.0, .g =  0.0, .b = 1.0};
+
+
 
 #define INCREMENT (360.0 / MERIDIANS)
-#define CYLINDER_VERTEX ((MERIDIANS + 1) * (STACKS * 2))
+
 
 static GLuint vertexColorLoc;
 
@@ -138,130 +145,13 @@ static void initLights() {
 
 static void initLightCubes() {
 
-	printf("Inside Light cubes\n");
-	float length = 1.2, topRadius = 0.45, bottomRadius = 0.35;
-	short sides = 8, stacks = 25;
-	ColorRGB ct = {.r = 0.1, .g = 0.1, .b = 0.1}, cb = {.r = 0.8, .g =  0.4, .b = 0.2};
+	vasito = cylinder_create(length, bottomRadius, topRadius, sides, stacks, cb, ct);
 
-	// scanf("Length, radio top, radius bottom: %f, %f, %f\n", &length, &topRadius, &bottomRadius);
-	// scanf("sides and stacks: %d %d", &sides, &stacks);
-	// scanf("Colors rgb: %f, %f, %f, %f, %f, %f\n", &c1_R, &c1_G, &c1_B, &c2_R, &c2_G, &c2_B);
-
-
-	Cylinder vasito = cylinder_create(length, topRadius, bottomRadius, sides, stacks, cb, ct);
-
-
-	srand(time(0)); 
-	// printf("%d\n", rand());
-	const float meridians = vasito->sides;
-	float angle = 0;
-	const float total_degrees = 360.0;
-	const float increment = total_degrees / meridians;
-	const float stack_width = vasito->length / vasito->stacks;
-
-
-	// Every stack has twice the meridians up and down.
-	int size = ((meridians + 1) * 3) * (vasito->stacks * 2);
-	int numberOfIndexes = (vasito->stacks * 2) * (meridians + 1) + vasito->stacks;
-
-	float* circle = new float[size];
-	float* circleColors = new float[size];
-	GLushort* circleIndexes = new GLushort[numberOfIndexes];
-	
-	// printf("Value of pi: %f, size of circle: %d\n", M_PI, sizeof(circle));
-
-	int posIndex = 0;
-	int colIndex = 0;
-	int indIndex = 0;
-	int j;
-	float width = 0.2, s_width = 0.2;
-	float radio = vasito->bottomRadius;
-
-	float radioDecrement = ((vasito->bottomRadius - vasito->topRadius) / (float) (vasito->stacks - 1));
-	Color colorDelta = {.r = (vasito->topColor.r - vasito->bottomColor.r) / (vasito->stacks - 1),
-						.g = (vasito->topColor.g - vasito->bottomColor.g) / (vasito->stacks - 1), 
-						.b = (vasito->topColor.b - vasito->bottomColor.b) / (vasito->stacks - 1)};
-	
-	Color tempColor = {colorBase.r, colorBase.g, colorBase.b};
-	
-	for(j = 0; j < STACKS; ++j, width += stack_width, radio += radioDecrement ) {
-
-		for(int i = 0; i < meridians + 1; ++i, angle += increment, ++posIndex) {
-			circle[posIndex * 6]     = radio  * cos(to_radians(angle));
-			circle[posIndex * 6 + 1] = width;
-			circle[posIndex * 6 + 2] = radio * sin(to_radians(angle));
-
-
-			circle[posIndex * 6 + 3] = (radio + radioDecrement) * cos(to_radians(angle));
-			circle[posIndex * 6 + 4] = width + stack_width;
-			circle[posIndex * 6 + 5] = (radio + radioDecrement) * sin(to_radians(angle));
-			// radio -= radioDecrement;
-			// printf("degrees: %f\n", angle);
-			// printf("%.2f %.2f %.2f\n", circle[i * 3], circle[i * 3 + 1], circle[i * 3 + 2]);
-		}
-		
-		Color randColor;
-		/* Modulo 256 and then Divide between 256 to get number bwtween 0 and 1*/
-		// we want 20% of the random part, 0.20 * 256.0 = 1280.0
-		randColor.r = (tempColor.r * 0.8) +  ((rand() & 255) / 1280.0);
-		randColor.g = (tempColor.g * 0.8) +  ((rand() & 255) / 1280.0);
-		randColor.b = (tempColor.b * 0.8) +  ((rand() & 255) / 1280.0);
-
-		for(int i = 0; i < meridians + 1; ++i, ++colIndex) {
-			circleColors[colIndex * 6]     = randColor.r;
-			circleColors[colIndex * 6 + 1] = randColor.g;
-			circleColors[colIndex * 6 + 2] = randColor.b;
-
-			circleColors[colIndex * 6 + 3]  = randColor.r;
-			circleColors[colIndex * 6 + 4] =  randColor.g;
-			circleColors[colIndex * 6 + 5] =  randColor.b;
-		}
-
-		for(int a = 0; a < (meridians + 1) * 2; a++, indIndex++){
-			circleIndexes[indIndex + j] = indIndex;
-		}
-		circleIndexes[indIndex + j] = 0xFFFF;
-
-		// Increment color by delta color
-		tempColor.r += colorDelta.r;
-		tempColor.g += colorDelta.g;
-		tempColor.b += colorDelta.b;
-
-	}
-
-	
-
-	// for(int i = 0; i < (meridians + 1) * STACKS; ++i)
-	// 	printf("%.4f %.4f %.4f\n%.4f %.4f %.4f\n\n", 
-	// 	circle[i * 6], circle[i * 6 + 1], circle[i * 6 + 2], circle[i * 6 + 3],
-	// 	circle[i * 6 + 4],circle[i * 6 + 5]);
-
-	// for(int a = 0; a < meridians * 2 * STACKS + STACKS; a++, indIndex++)
-	// 		printf("%d\n",circleIndexes[a]);
-
-
-
-	// printf("%\nPositions sized: %d\n", sizeof(positions) / sizeof(float));
 	glUseProgram(programId2);
 	glGenVertexArrays(1, &circleVA);
 	glBindVertexArray(circleVA);
-	glGenBuffers(3, bufferId);
-
-	glBindBuffer(GL_ARRAY_BUFFER, bufferId[0]);
-	glBufferData(GL_ARRAY_BUFFER, size * sizeof(float), circle, GL_STATIC_DRAW);
-	glVertexAttribPointer(vertexPositionLoc2, 3, GL_FLOAT, 0, 0, 0);
-	glEnableVertexAttribArray(vertexPositionLoc2);
-
-	glBindBuffer(GL_ARRAY_BUFFER, bufferId[1]);
-	glBufferData(GL_ARRAY_BUFFER, size * sizeof(float), circleColors, GL_STATIC_DRAW);
-	glVertexAttribPointer(vertexColorLoc, 3, GL_FLOAT, 0, 0, 0);
-	glEnableVertexAttribArray(vertexColorLoc);
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bufferId[2]);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, numberOfIndexes * sizeof(float), circleIndexes, GL_STATIC_DRAW);
-
-	glEnable(GL_PRIMITIVE_RESTART);
-	glPrimitiveRestartIndex(0xFFFF);
+	
+	cylinder_bind(vasito, vertexPositionLoc2, vertexColorLoc, 0);
 
 }
 
@@ -424,32 +314,21 @@ static void displayFunc() {
 	glUniformMatrix4fv(viewMatrixLoc2, 1, true, viewMatrix.values);
 
 	//	Dibujar fuente de luz roja
-	// glUniform3f(modelColorLoc2, 1, 0, 0);
-	// mIdentity(&modelMatrix);
-	// translate(&modelMatrix, -2, 0, 0);
-	// glUniformMatrix4fv(modelMatrixLoc2, 1, true, modelMatrix.values);
-	// glDrawArrays(GL_LINE_STRIP, 0, CYLINDER_VERTEX);
+	mIdentity(&modelMatrix);
+	translate(&modelMatrix, -2, 0, 0);
+	glUniformMatrix4fv(modelMatrixLoc2, 1, true, modelMatrix.values);
+	cylinder_draw(vasito);
 
-	//	Dibujar fuente de luz verde
-	// glUniform3f(modelColorLoc2, 0, 1, 0);
-	// mIdentity(&modelMatrix);
-	// translate(&modelMatrix, greenLightX, greenLightY, greenLightZ);
-	// glUniformMatrix4fv(modelMatrixLoc2, 1, true, modelMatrix.values);
-	// glDrawArrays(GL_TRIANGLE_STRIP, 0, CYLINDER_VERTEX);
-
-	
 	mIdentity(&modelMatrix);
 	translate(&modelMatrix, greenLightX, greenLightY, greenLightZ);
 	glUniformMatrix4fv(modelMatrixLoc2, 1, true, modelMatrix.values);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bufferId[2]);
-	glDrawElements(GL_TRIANGLE_STRIP, (MERIDIANS + 1) * (STACKS * 2) + STACKS, GL_UNSIGNED_SHORT, 0);
+	cylinder_draw(vasito);
 
 	//	Dibujar fuente de luz azul
-	// glUniform3f(modelColorLoc2, 0, 0, 1);
-	// mIdentity(&modelMatrix);
-	// translate(&modelMatrix,  2, 0, 0);
-	// glUniformMatrix4fv(modelMatrixLoc2, 1, true, modelMatrix.values);
-	// glDrawArrays(GL_POINTS, 0, CYLINDER_VERTEX);
+	mIdentity(&modelMatrix);
+	translate(&modelMatrix,  2, 0, 0);
+	glUniformMatrix4fv(modelMatrixLoc2, 1, true, modelMatrix.values);
+	cylinder_draw(vasito);
 
 	glutSwapBuffers();
 }
@@ -502,6 +381,11 @@ static void keyPressedFunc(unsigned char key, int x, int y) {
 }
 
 int main(int argc, char **argv) {
+	printf("Length, radio top, radius bottom: \n");
+	scanf("%f %f %f", &length, &topRadius, &bottomRadius);
+	printf("sides and stacks: \n");
+	scanf("%d %d", &sides, &stacks);
+
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_DEPTH);
     glutInitWindowSize(800, 600);

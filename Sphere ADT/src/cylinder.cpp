@@ -15,6 +15,7 @@ Cylinder cylinder_create(float length, float bottomRadius, float topRadius, shor
     ret->stacks = stacks;
     ret->bottomColor = bottomColor;
     ret->topColor = topColor; 
+	ret->indexBuffLoc = 0;
     return ret;
 }
 
@@ -45,14 +46,16 @@ void cylinder_bind(Cylinder vasito, uint posLoc , uint colLoc, uint normLoc )
 	int colIndex = 0;
 	int indIndex = 0;
 	int j;
-	float width = 0.2, s_width = 0.2;
+	float width = 0.0;
 	float radio = vasito->bottomRadius;
 
-	float radioDecrement = ((vasito->bottomRadius - vasito->topRadius) / (float) (vasito->stacks - 1));
-	ColorRGB colorDelta = {.r = (vasito->topColor.r - vasito->bottomColor.r) / (vasito->stacks - 1),
-						.g = (vasito->topColor.g - vasito->bottomColor.g) / (vasito->stacks - 1), 
-						.b = (vasito->topColor.b - vasito->bottomColor.b) / (vasito->stacks - 1)};
+	float radioDecrement = ((vasito->topRadius - vasito->bottomRadius) / (float) (vasito->stacks - 1));
+	printf("radio decrement %f\n", radioDecrement );
+	ColorRGB colorDelta = {	.r = (vasito->topColor.r - vasito->bottomColor.r) / (vasito->stacks - 1),
+							.g = (vasito->topColor.g - vasito->bottomColor.g) / (vasito->stacks - 1), 
+							.b = (vasito->topColor.b - vasito->bottomColor.b) / (vasito->stacks - 1)};
 	
+	printf("color decrement %f %f %f\n", colorDelta.r, colorDelta.g, colorDelta.b );
 	ColorRGB tempColor = {vasito->bottomColor.r, vasito->bottomColor.g, vasito->bottomColor.b};
 	
 	for(j = 0; j < vasito->stacks; ++j, width += stack_width, radio += radioDecrement ) {
@@ -71,6 +74,7 @@ void cylinder_bind(Cylinder vasito, uint posLoc , uint colLoc, uint normLoc )
 			// printf("%.2f %.2f %.2f\n", circle[i * 3], circle[i * 3 + 1], circle[i * 3 + 2]);
 		}
 		
+		// printf("Temp color %.4f %.4f %.4f\n", tempColor.r, tempColor.g, tempColor.b);
 		ColorRGB randColor;
 		/* Modulo 256 and then Divide between 256 to get number bwtween 0 and 1*/
 		// we want 20% of the random part, 0.20 * 256.0 = 1280.0
@@ -102,7 +106,7 @@ void cylinder_bind(Cylinder vasito, uint posLoc , uint colLoc, uint normLoc )
 
 	
 
-	// for(int i = 0; i < (meridians + 1) * STACKS; ++i)
+	// for(int i = 0; i < (meridians + 1) * vasito->stacks; ++i)
 	// 	printf("%.4f %.4f %.4f\n%.4f %.4f %.4f\n\n", 
 	// 	circle[i * 6], circle[i * 6 + 1], circle[i * 6 + 2], circle[i * 6 + 3],
 	// 	circle[i * 6 + 4],circle[i * 6 + 5]);
@@ -110,6 +114,7 @@ void cylinder_bind(Cylinder vasito, uint posLoc , uint colLoc, uint normLoc )
 	// for(int a = 0; a < meridians * 2 * STACKS + STACKS; a++, indIndex++)
 	// 		printf("%d\n",circleIndexes[a]);
 
+	glGenBuffers(3, bufferId);
 
 	glBindBuffer(GL_ARRAY_BUFFER, bufferId[0]);
 	glBufferData(GL_ARRAY_BUFFER, size * sizeof(float), circle, GL_STATIC_DRAW);
@@ -124,6 +129,7 @@ void cylinder_bind(Cylinder vasito, uint posLoc , uint colLoc, uint normLoc )
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bufferId[2]);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, numberOfIndexes * sizeof(float), circleIndexes, GL_STATIC_DRAW);
 
+	vasito->indexBuffLoc = bufferId[2];
 	glEnable(GL_PRIMITIVE_RESTART);
 	glPrimitiveRestartIndex(0xFFFF);
 
@@ -131,10 +137,11 @@ void cylinder_bind(Cylinder vasito, uint posLoc , uint colLoc, uint normLoc )
 
 void cylinder_draw(Cylinder c)
 {
-
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, c->indexBuffLoc);
+	glDrawElements(GL_TRIANGLE_STRIP, (c->sides + 1) * (c->stacks * 2) + c->stacks, GL_UNSIGNED_SHORT, 0);
 }
 
 void cylinder_delte(Cylinder c) 
 {
-
+	delete c;
 }

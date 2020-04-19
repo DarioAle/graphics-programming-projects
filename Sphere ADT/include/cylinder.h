@@ -12,18 +12,20 @@ typedef struct {
     float b;
 }ColorRGB;
 
+typedef unsigned int uint;
+
 typedef struct {
     float length;
     float bottomRadius;
     float topRadius;
     short sides;
     short stacks;
+    uint  indexBuffLoc;
     ColorRGB bottomColor;
     ColorRGB topColor;
 }CylinderStr;
 
 typedef CylinderStr* Cylinder;
-typedef unsigned int uint;
 
 Cylinder cylinder_create(float length, float bottomRadius, float topRadius, short sides, short stacks,
                         ColorRGB bottomColor, ColorRGB topColor);
