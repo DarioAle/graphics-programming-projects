@@ -6,6 +6,11 @@
 #define M_PI 3.14159265358979323846
 #endif
 
+float to_radians(float degrees) {
+	return degrees * (M_PI / 180.0);
+}
+
+
 struct strNode
 {
     struct strNode *below;

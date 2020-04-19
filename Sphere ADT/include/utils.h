@@ -17,6 +17,7 @@ typedef struct Triangle
     Vertex pointC;
 } Triangle;
 
+
 const char *loadShader(const char *filename);
 GLuint compileShader(const char *filename, GLuint shaderType);
 bool shaderCompiled(GLuint shaderId);

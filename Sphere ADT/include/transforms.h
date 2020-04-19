@@ -3,6 +3,7 @@
 
 #include "mat4.h"
 
+float to_radians(float degrees);
 void translate(Mat4 *, float, float, float);
 void rotateX(Mat4 *, float);
 void rotateY(Mat4 *, float);

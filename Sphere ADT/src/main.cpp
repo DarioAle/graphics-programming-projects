@@ -2,18 +2,19 @@
 #include <GL/freeglut.h>
 #include "transforms.h"
 #include "utils.h"
+#include "cylinder.h"
 #include <stdio.h>
 #include <math.h>
 #include <vector>
 #include <time.h>
 
 
-#define STACKS 20
-#define MERIDIANS 40
-#define LENGTH 3.0
+#define STACKS 25
+#define MERIDIANS 8
+#define LENGTH 2.0
 
-#define TOP_RADIO    0.45
-#define BOTTOM_RADIO 0.015
+#define TOP_RADIO    0.40
+#define BOTTOM_RADIO 0.40
 
 
 #define INCREMENT (360.0 / MERIDIANS)
@@ -27,8 +28,8 @@ typedef struct {
 	float b;
 } Color;
 
-Color colorBase = {.r = 0.4, .g = 0.2, .b = 0.8};
 Color colorTop  = {.r = 0.1, .g = 0.1, .b = 0.1};
+Color colorBase = {.r = 0.8, .g = 0.4, .b = 0.2};
 
 typedef enum { IDLE, LEFT, RIGHT, UP, DOWN, FRONT, BACK } MOTION_TYPE;
 
@@ -68,9 +69,6 @@ static vec3 materialA     = {0.8, 0.8, 0.8};
 static vec3 materialD     = {0.6, 0.6, 0.6};
 static vec3 materialS     = {0.6, 0.6, 0.6};
 
-inline float to_radians(float degrees) {
-	return degrees * (M_PI / 180.0);
-}
 
 //                          Color    subcutoff,  Position  Exponent Direction  Cos(cutoff)
 static float lights[]   = { 1, 0, 0,  0.8660,   -2, 0, 0,  128,	 -1, 0,  0,   0.5,		// Luz Roja
@@ -140,20 +138,31 @@ static void initLights() {
 
 static void initLightCubes() {
 
+	printf("Inside Light cubes\n");
+	float length = 1.2, topRadius = 0.45, bottomRadius = 0.35;
+	short sides = 8, stacks = 25;
+	ColorRGB ct = {.r = 0.1, .g = 0.1, .b = 0.1}, cb = {.r = 0.8, .g =  0.4, .b = 0.2};
+
+	// scanf("Length, radio top, radius bottom: %f, %f, %f\n", &length, &topRadius, &bottomRadius);
+	// scanf("sides and stacks: %d %d", &sides, &stacks);
+	// scanf("Colors rgb: %f, %f, %f, %f, %f, %f\n", &c1_R, &c1_G, &c1_B, &c2_R, &c2_G, &c2_B);
+
+
+	Cylinder vasito = cylinder_create(length, topRadius, bottomRadius, sides, stacks, cb, ct);
+
+
 	srand(time(0)); 
 	// printf("%d\n", rand());
-	float l1 = -0.2, l2 = 0.2;
-
-	const float meridians = MERIDIANS;
+	const float meridians = vasito->sides;
 	float angle = 0;
 	const float total_degrees = 360.0;
 	const float increment = total_degrees / meridians;
-	const float stack_width = (LENGTH / STACKS);
+	const float stack_width = vasito->length / vasito->stacks;
 
 
 	// Every stack has twice the meridians up and down.
-	int size = ((meridians + 1) * 3) * (STACKS * 2);
-	int numberOfIndexes = (STACKS * 2) * (meridians + 1) + STACKS;
+	int size = ((meridians + 1) * 3) * (vasito->stacks * 2);
+	int numberOfIndexes = (vasito->stacks * 2) * (meridians + 1) + vasito->stacks;
 
 	float* circle = new float[size];
 	float* circleColors = new float[size];
@@ -166,11 +175,17 @@ static void initLightCubes() {
 	int indIndex = 0;
 	int j;
 	float width = 0.2, s_width = 0.2;
-	float radio = BOTTOM_RADIO;
-	float radioDecrement = ((TOP_RADIO - BOTTOM_RADIO) / (float) (STACKS + 1));
+	float radio = vasito->bottomRadius;
 
-	printf("Radio decrement %f\n", radioDecrement);
+	float radioDecrement = ((vasito->bottomRadius - vasito->topRadius) / (float) (vasito->stacks - 1));
+	Color colorDelta = {.r = (vasito->topColor.r - vasito->bottomColor.r) / (vasito->stacks - 1),
+						.g = (vasito->topColor.g - vasito->bottomColor.g) / (vasito->stacks - 1), 
+						.b = (vasito->topColor.b - vasito->bottomColor.b) / (vasito->stacks - 1)};
+	
+	Color tempColor = {colorBase.r, colorBase.g, colorBase.b};
+	
 	for(j = 0; j < STACKS; ++j, width += stack_width, radio += radioDecrement ) {
+
 		for(int i = 0; i < meridians + 1; ++i, angle += increment, ++posIndex) {
 			circle[posIndex * 6]     = radio  * cos(to_radians(angle));
 			circle[posIndex * 6 + 1] = width;
@@ -184,33 +199,42 @@ static void initLightCubes() {
 			// printf("degrees: %f\n", angle);
 			// printf("%.2f %.2f %.2f\n", circle[i * 3], circle[i * 3 + 1], circle[i * 3 + 2]);
 		}
-		Color tempColor;
+		
+		Color randColor;
 		/* Modulo 256 and then Divide between 256 to get number bwtween 0 and 1*/
 		// we want 20% of the random part, 0.20 * 256.0 = 1280.0
-		tempColor.r = (colorBase.r * 0.8) +  ((rand() & 255) / 1280.0);
-		tempColor.g = (colorBase.g * 0.8) +  ((rand() & 255) / 1280.0);
-		tempColor.b = (colorBase.b * 0.8) +  ((rand() & 255) / 1280.0);
+		randColor.r = (tempColor.r * 0.8) +  ((rand() & 255) / 1280.0);
+		randColor.g = (tempColor.g * 0.8) +  ((rand() & 255) / 1280.0);
+		randColor.b = (tempColor.b * 0.8) +  ((rand() & 255) / 1280.0);
 
 		for(int i = 0; i < meridians + 1; ++i, ++colIndex) {
-			circleColors[colIndex * 6]     = tempColor.r;
-			circleColors[colIndex * 6 + 1] = tempColor.g;
-			circleColors[colIndex * 6 + 2] = tempColor.b;
+			circleColors[colIndex * 6]     = randColor.r;
+			circleColors[colIndex * 6 + 1] = randColor.g;
+			circleColors[colIndex * 6 + 2] = randColor.b;
 
-			circleColors[colIndex * 6 + 3]  = tempColor.r;
-			circleColors[colIndex * 6 + 4] =  tempColor.g;
-			circleColors[colIndex * 6 + 5] =  tempColor.b;
+			circleColors[colIndex * 6 + 3]  = randColor.r;
+			circleColors[colIndex * 6 + 4] =  randColor.g;
+			circleColors[colIndex * 6 + 5] =  randColor.b;
 		}
 
 		for(int a = 0; a < (meridians + 1) * 2; a++, indIndex++){
 			circleIndexes[indIndex + j] = indIndex;
 		}
 		circleIndexes[indIndex + j] = 0xFFFF;
+
+		// Increment color by delta color
+		tempColor.r += colorDelta.r;
+		tempColor.g += colorDelta.g;
+		tempColor.b += colorDelta.b;
+
 	}
 
-	for(int i = 0; i < (meridians + 1) * STACKS; ++i)
-		printf("%.4f %.4f %.4f\n%.4f %.4f %.4f\n\n", 
-		circle[i * 6], circle[i * 6 + 1], circle[i * 6 + 2], circle[i * 6 + 3],
-		circle[i * 6 + 4],circle[i * 6 + 5]);
+	
+
+	// for(int i = 0; i < (meridians + 1) * STACKS; ++i)
+	// 	printf("%.4f %.4f %.4f\n%.4f %.4f %.4f\n\n", 
+	// 	circle[i * 6], circle[i * 6 + 1], circle[i * 6 + 2], circle[i * 6 + 3],
+	// 	circle[i * 6 + 4],circle[i * 6 + 5]);
 
 	// for(int a = 0; a < meridians * 2 * STACKS + STACKS; a++, indIndex++)
 	// 		printf("%d\n",circleIndexes[a]);
@@ -413,7 +437,7 @@ static void displayFunc() {
 	// glUniformMatrix4fv(modelMatrixLoc2, 1, true, modelMatrix.values);
 	// glDrawArrays(GL_TRIANGLE_STRIP, 0, CYLINDER_VERTEX);
 
-	glUniform3f(modelColorLoc2, 0, 1, 0);
+	
 	mIdentity(&modelMatrix);
 	translate(&modelMatrix, greenLightX, greenLightY, greenLightZ);
 	glUniformMatrix4fv(modelMatrixLoc2, 1, true, modelMatrix.values);
