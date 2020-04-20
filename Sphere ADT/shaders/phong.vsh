@@ -1,8 +1,9 @@
-
 #version 400
 
 in vec3 vertexPosition;
 in vec3 vertexNormal;
+in vec3 vertexColor;
+
 
 uniform mat4 modelMatrix;
 uniform mat4 viewMatrix;
@@ -10,6 +11,7 @@ uniform mat4 projMatrix;
 
 out vec3 worldVertexPosition;
 out vec3 worldVertexNormal;
+out vec3 vertexColorToFS;
 
 
 void main() {
@@ -18,7 +20,7 @@ void main() {
   worldVertexPosition = worldPosition.xyz;
   
   mat4 G = transpose(inverse(modelMatrix));
-  worldVertexNormal = (G * vec4(vertexNormal, 0)).xyz;
-  
+  worldVertexNormal = (G * vec4(vertexNormal, 0)).xyz;  
+  vertexColorToFS = vertexColor;
   
 }

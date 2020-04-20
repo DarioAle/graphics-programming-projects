@@ -20,11 +20,13 @@ typedef float vec3[3];
 static Mat4   modelMatrix, projectionMatrix, viewMatrix;
 static GLuint programId1, vertexPositionLoc,  vertexNormalLoc, modelMatrixLoc;  
 static GLuint projectionMatrixLoc,  viewMatrixLoc,  projectionMatrixLoc2, viewMatrixLoc2;
-static GLuint programId2, vertexPositionLoc2, modelColorLoc2,  modelMatrixLoc2;
+static GLuint programId2, vertexPositionLoc2, modelColorLoc2,  modelMatrixLoc2, vereteNormalLoc2;
+
 static GLuint ambientLightLoc, materialALoc, materialDLoc;
+static GLuint ambientLightLoc2, materialALoc2, materialDLoc2, materialSLoc2, cameraPositionLoc2;
 static GLuint materialSLoc, cameraPositionLoc;
 
-GLuint cubeVA, circleVA, roomVA;
+GLuint roomVA;
 GLuint roomBuffers[3];
 
 GLuint bufferId[3];
@@ -45,19 +47,18 @@ static const int ROOM_WIDTH  = 12;
 static const int ROOM_HEIGHT =  6;
 static const int ROOM_DEPTH  = 40;
 
-static vec3 ambientLight  = {0.5, 0.5, 0.5};
-static vec3 materialA     = {0.8, 0.8, 0.8};
+static vec3 ambientLight  = {1.0, 1.0, 1.0};
+static vec3 materialA     = {0.5, 0.5, 0.7};
 static vec3 materialD     = {0.6, 0.6, 0.6};
-static vec3 materialS     = {0.6, 0.6, 0.6};
+static vec3 materialS     = {0.4, 0.4, 0.4};
 
 
 //                          Color    subcutoff,  Position  Exponent Direction  Cos(cutoff)
-static float lights[]   = { 1, 0, 0,  0.8660,   -2, 0, 0,  128,	 -1, 0,  0,   0.5,		// Luz Roja
-		                    0, 1, 0,  0.9659,    0, 0, 0,  128,   0, 0, -1,   0.866, 	// Luz Verde
-		                    0, 0, 1,  0.9238,    2, 0, 0,  128,   1, 0,  0,	  0.7071    // Luz Azul
+static float lights[]   = { 1, 1, 1,  0.8660,   -1, 0, 0,  128,	 -1, 0,  0,   0.5,		// Luz Roja
+		                    1, 1, 1,  0.9659,    0, 0, 0,  128,   0, 0, -1,   0.866, 	// Luz Verde
+		                    1, 1, 1,  0.9238,    2, 0, 0,  128,   1, 0,  0,	  0.7071    // Luz Azul
 };
-static GLuint lightsBufferId;
-
+static GLuint lightsBufferId, lightsBufferId2;
 
 static void initShaders() {
 	GLuint vShader = compileShader("shaders/phong.vsh", GL_VERTEX_SHADER);
@@ -71,13 +72,16 @@ static void initShaders() {
 
 	vertexPositionLoc   = glGetAttribLocation(programId1, "vertexPosition");
 	vertexNormalLoc     = glGetAttribLocation(programId1, "vertexNormal");
+	vertexColorLoc		 = glGetAttribLocation(programId1, "vertexColor");
 	modelMatrixLoc      = glGetUniformLocation(programId1, "modelMatrix");
 	viewMatrixLoc       = glGetUniformLocation(programId1, "viewMatrix");
 	projectionMatrixLoc = glGetUniformLocation(programId1, "projMatrix");
+
 	ambientLightLoc     = glGetUniformLocation(programId1, "ambientLight");
 	materialALoc        = glGetUniformLocation(programId1, "materialA");
 	materialDLoc        = glGetUniformLocation(programId1, "materialD");
 	materialSLoc        = glGetUniformLocation(programId1, "materialS");
+
 	cameraPositionLoc   = glGetUniformLocation(programId1, "cameraPosition");
 
 	//	printf("%d, %d, %d, %d, %d\n", vertexPositionLoc, vertexNormalLoc, modelMatrixLoc, viewMatrixLoc, projectionMatrixLoc);
@@ -92,12 +96,20 @@ static void initShaders() {
 	glLinkProgram(programId2);
 
 	vertexPositionLoc2   = glGetAttribLocation(programId2, "vertexPosition");
-	vertexColorLoc		 = glGetAttribLocation(programId2, "vertexColor");
+	// vertexColorLoc		 = glGetAttribLocation(programId2, "vertexColor");
+	vereteNormalLoc2 	 = glGetAttribLocation(programId2, "vertexNormal");
 	
 	modelMatrixLoc2      = glGetUniformLocation(programId2, "modelMatrix");
 	viewMatrixLoc2       = glGetUniformLocation(programId2, "viewMatrix");
 	projectionMatrixLoc2 = glGetUniformLocation(programId2, "projectionMatrix");
-	modelColorLoc2       = glGetUniformLocation(programId2, "modelColor");
+
+	ambientLightLoc2     = glGetUniformLocation(programId2, "ambientLight");
+	materialALoc2        = glGetUniformLocation(programId2, "materialA");
+	materialDLoc2        = glGetUniformLocation(programId2, "materialD");
+	materialSLoc2        = glGetUniformLocation(programId2, "materialS");
+
+	cameraPositionLoc2   = glGetUniformLocation(programId2, "cameraPosition");
+	
 }
 
 static void initLights() {
@@ -108,21 +120,36 @@ static void initLights() {
 	glUniform3fv(materialDLoc,     1, materialD);
 	glUniform3fv(materialSLoc,     1, materialS);
 
-	glGenBuffers(1, &lightsBufferId);
-	glBindBuffer(GL_UNIFORM_BUFFER, lightsBufferId);
+	// glGenBuffers(1, &lightsBufferId);
+	// glBindBuffer(GL_UNIFORM_BUFFER, lightsBufferId);
+	// glBufferData(GL_UNIFORM_BUFFER, sizeof(lights), lights, GL_DYNAMIC_DRAW);
+
+	// GLuint uniformBlockIndex = glGetUniformBlockIndex(programId1, "LightBlock");
+	// glBindBufferBase(GL_UNIFORM_BUFFER, 0, lightsBufferId);
+	// glUniformBlockBinding(programId1, uniformBlockIndex, 0);
+
+	glUseProgram(programId2);
+	glUniform3fv(ambientLightLoc2,  1, ambientLight);
+
+	glUniform3fv(materialALoc2,     1, materialA);
+	glUniform3fv(materialDLoc2,     1, materialD);
+	glUniform3fv(materialSLoc2,     1, materialS);
+
+	glGenBuffers(1, &lightsBufferId2);
+	glBindBuffer(GL_UNIFORM_BUFFER, lightsBufferId2);
 	glBufferData(GL_UNIFORM_BUFFER, sizeof(lights), lights, GL_DYNAMIC_DRAW);
 
-	GLuint uniformBlockIndex = glGetUniformBlockIndex(programId1, "LightBlock");
-	glBindBufferBase(GL_UNIFORM_BUFFER, 0, lightsBufferId);
-	glUniformBlockBinding(programId1, uniformBlockIndex, 0);
+	GLuint uniformBlockIndex2 = glGetUniformBlockIndex(programId2, "LightBlock");
+	glBindBufferBase(GL_UNIFORM_BUFFER, 0, lightsBufferId2);
+	glUniformBlockBinding(programId2, uniformBlockIndex2, 0);
+
 }
 
 static void initLightCubes() {
 
 	vasito = cylinder_create(length, bottomRadius, topRadius, sides, stacks, cb, ct);
-
-	glUseProgram(programId2);	
-	cylinder_bind(vasito, vertexPositionLoc2, vertexColorLoc, 0);
+	glUseProgram(programId1);	
+	cylinder_bind(vasito, vertexPositionLoc, vertexColorLoc, vertexNormalLoc);
 
 }
 
@@ -164,14 +191,6 @@ static void initRoom() {
 	glEnableVertexAttribArray(vertexNormalLoc);
 }
 
-static void crossProduct(vec3 p1, vec3 p2, vec3 p3, vec3 res) {
-	vec3 u = { p2[0] - p1[0], p2[1] - p1[1], p2[2] - p1[2] };
-	vec3 v = { p3[0] - p1[0], p3[1] - p1[1], p3[2] - p1[2] };
-	res[0] = u[1] * v[2] - u[2] * v[1];
-	res[1] = u[2] * v[0] - u[0] * v[2];
-	res[2] = u[0] * v[1] - u[1] * v[0];
-}
-
 static void displayFunc() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -210,15 +229,6 @@ static void displayFunc() {
 	glUniformMatrix4fv(viewMatrixLoc, 1, true, viewMatrix.values);
 	glUniform3f(cameraPositionLoc, cameraX, 0, cameraZ);
 
-	//	Envío de la posición de la fuente de luz verde
-	lights[16] = greenLightX;
-	lights[17] = greenLightY;
-	lights[18] = greenLightZ;
-	glBindBuffer(GL_UNIFORM_BUFFER, lightsBufferId);
-	glBufferData(GL_UNIFORM_BUFFER, sizeof(lights), lights, GL_DYNAMIC_DRAW);
-	GLuint uniformBlockIndex = glGetUniformBlockIndex(programId1, "LightBlock");
-	glBindBufferBase(GL_UNIFORM_BUFFER, 0, lightsBufferId);
-	glUniformBlockBinding(programId1, uniformBlockIndex, 0);
 
 	//	Dibujar el cuarto
 	mIdentity(&modelMatrix);
@@ -226,19 +236,30 @@ static void displayFunc() {
 	glBindVertexArray(roomVA);
 	glDrawArrays(GL_TRIANGLES, 0, 36);
 
-	//	Envío de proyección y vista al programa 2
-	glUseProgram(programId2);
-	glUniformMatrix4fv(projectionMatrixLoc2, 1, true, projectionMatrix.values);
-	glUniformMatrix4fv(viewMatrixLoc2, 1, true, viewMatrix.values);
-
 	// Dibujar cilindro movible
 	mIdentity(&modelMatrix);
 	translate(&modelMatrix, greenLightX, greenLightY, greenLightZ);
 	static int angle = 0;
 	rotateX(&modelMatrix, angle += 1);
 	glUniformMatrix4fv(modelMatrixLoc2, 1, true, modelMatrix.values);
-
 	cylinder_draw(vasito);
+
+	//	Envío de proyección y vista al programa 2
+	glUseProgram(programId2);
+	glUniformMatrix4fv(projectionMatrixLoc2, 1, true, projectionMatrix.values);
+	mIdentity(&viewMatrix);
+	rotateY(&viewMatrix, -cameraAngle);
+	translate(&viewMatrix, -cameraX, 0, -cameraZ);
+	glUniformMatrix4fv(viewMatrixLoc2, 1, true, viewMatrix.values);
+	glUniform3f(cameraPositionLoc2, cameraX, 0, cameraZ);
+
+	// // Dibujar cilindro movible
+	// mIdentity(&modelMatrix);
+	// translate(&modelMatrix, greenLightX, greenLightY, greenLightZ);
+	// static int angle = 0;
+	// rotateX(&modelMatrix, angle += 1);
+	// glUniformMatrix4fv(modelMatrixLoc2, 1, true, modelMatrix.values);
+	// cylinder_draw(vasito);
 
 	glutSwapBuffers();
 }
@@ -296,8 +317,8 @@ int main(int argc, char **argv) {
 	// printf("sides and stacks: \n");
 	// scanf("%d %d", &sides, &stacks);
 
-	length = 2.0; topRadius = 1.5; bottomRadius = 0.5;
-	sides = 40; stacks = 25;
+	length = 2.0; topRadius = 1.0; bottomRadius = 0.5;
+	sides = 6; stacks = 8;
 
 
 	glutInit(&argc, argv);

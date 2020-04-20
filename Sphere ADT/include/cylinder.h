@@ -4,6 +4,8 @@
 #include <GL/glew.h>
 #include <GL/freeglut.h>
 
+typedef float vec3[3];
+
 typedef struct {
     float r;
     float g; 
@@ -25,6 +27,8 @@ typedef struct {
 }CylinderStr;
 
 typedef CylinderStr* Cylinder;
+
+void crossProduct(vec3 p1, vec3 p2, vec3 p3, vec3 res);
 
 Cylinder cylinder_create(float length, float bottomRadius, float topRadius, short sides, short stacks,
                         ColorRGB bottomColor, ColorRGB topColor);

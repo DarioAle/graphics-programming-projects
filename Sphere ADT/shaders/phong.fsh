@@ -2,6 +2,7 @@
 
 in vec3 worldVertexPosition;
 in vec3 worldVertexNormal;
+in vec3 vertexColorToFS;
 
 uniform vec3 cameraPosition;
 uniform vec3 ambientLight;
@@ -56,6 +57,7 @@ void main() {
       
       tempPixelColor += factorDeg * factorAtt * lights[i].lightColor * (materialD * factorD + materialS * factorS);
    }
-   pixelColor = vec4(clamp(tempPixelColor, 0, 1), 1);
+   
+   pixelColor = vec4(clamp(tempPixelColor, 0, 1), 1) * vertexColorToFS;
 }
 
