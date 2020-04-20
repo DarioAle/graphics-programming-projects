@@ -11,20 +11,17 @@
 Cylinder vasito;
 float length, topRadius, bottomRadius;
 short sides, stacks;	
-static GLuint vertexColorLoc;
 ColorRGB ct = {.r = 1.0, .g = 0.0, .b = 0.0}, cb = {.r = 0.0, .g =  0.0, .b = 1.0};
 
 typedef enum { IDLE, LEFT, RIGHT, UP, DOWN, FRONT, BACK } MOTION_TYPE;
 typedef float vec3[3];
 
 static Mat4   modelMatrix, projectionMatrix, viewMatrix;
-static GLuint programId1, vertexPositionLoc,  vertexNormalLoc, modelMatrixLoc;  
-static GLuint projectionMatrixLoc,  viewMatrixLoc,  projectionMatrixLoc2, viewMatrixLoc2;
-static GLuint programId2, vertexPositionLoc2, modelColorLoc2,  modelMatrixLoc2, vereteNormalLoc2;
 
-static GLuint ambientLightLoc, materialALoc, materialDLoc;
-static GLuint ambientLightLoc2, materialALoc2, materialDLoc2, materialSLoc2, cameraPositionLoc2;
-static GLuint materialSLoc, cameraPositionLoc;
+static GLuint programId1, vertexPositionLoc,  vertexNormalLoc, vertexColorLoc;  
+static GLuint modelMatrixLoc, projectionMatrixLoc,  viewMatrixLoc;
+
+static GLuint ambientLightLoc, materialALoc, materialDLoc, materialSLoc, cameraPositionLoc;
 
 GLuint roomVA;
 GLuint roomBuffers[3];
@@ -84,32 +81,7 @@ static void initShaders() {
 
 	cameraPositionLoc   = glGetUniformLocation(programId1, "cameraPosition");
 
-	//	printf("%d, %d, %d, %d, %d\n", vertexPositionLoc, vertexNormalLoc, modelMatrixLoc, viewMatrixLoc, projectionMatrixLoc);
-
-	vShader = compileShader("shaders/position_mvp.vsh", GL_VERTEX_SHADER);
-	if(!shaderCompiled(vShader)) return;
-	fShader = compileShader("shaders/modelColor.fsh", GL_FRAGMENT_SHADER);
-	if(!shaderCompiled(fShader)) return;
-	programId2 = glCreateProgram();
-	glAttachShader(programId2, vShader);
-	glAttachShader(programId2, fShader);
-	glLinkProgram(programId2);
-
-	vertexPositionLoc2   = glGetAttribLocation(programId2, "vertexPosition");
-	// vertexColorLoc		 = glGetAttribLocation(programId2, "vertexColor");
-	vereteNormalLoc2 	 = glGetAttribLocation(programId2, "vertexNormal");
-	
-	modelMatrixLoc2      = glGetUniformLocation(programId2, "modelMatrix");
-	viewMatrixLoc2       = glGetUniformLocation(programId2, "viewMatrix");
-	projectionMatrixLoc2 = glGetUniformLocation(programId2, "projectionMatrix");
-
-	ambientLightLoc2     = glGetUniformLocation(programId2, "ambientLight");
-	materialALoc2        = glGetUniformLocation(programId2, "materialA");
-	materialDLoc2        = glGetUniformLocation(programId2, "materialD");
-	materialSLoc2        = glGetUniformLocation(programId2, "materialS");
-
-	cameraPositionLoc2   = glGetUniformLocation(programId2, "cameraPosition");
-	
+	//	printf("%d, %d, %d, %d, %d\n", vertexPositionLoc, vertexNormalLoc, modelMatrixLoc, viewMatrixLoc, projectionMatrixLoc);	
 }
 
 static void initLights() {
@@ -120,32 +92,16 @@ static void initLights() {
 	glUniform3fv(materialDLoc,     1, materialD);
 	glUniform3fv(materialSLoc,     1, materialS);
 
-	// glGenBuffers(1, &lightsBufferId);
-	// glBindBuffer(GL_UNIFORM_BUFFER, lightsBufferId);
-	// glBufferData(GL_UNIFORM_BUFFER, sizeof(lights), lights, GL_DYNAMIC_DRAW);
-
-	// GLuint uniformBlockIndex = glGetUniformBlockIndex(programId1, "LightBlock");
-	// glBindBufferBase(GL_UNIFORM_BUFFER, 0, lightsBufferId);
-	// glUniformBlockBinding(programId1, uniformBlockIndex, 0);
-
-	glUseProgram(programId2);
-	glUniform3fv(ambientLightLoc2,  1, ambientLight);
-
-	glUniform3fv(materialALoc2,     1, materialA);
-	glUniform3fv(materialDLoc2,     1, materialD);
-	glUniform3fv(materialSLoc2,     1, materialS);
-
-	glGenBuffers(1, &lightsBufferId2);
-	glBindBuffer(GL_UNIFORM_BUFFER, lightsBufferId2);
+	glGenBuffers(1, &lightsBufferId);
+	glBindBuffer(GL_UNIFORM_BUFFER, lightsBufferId);
 	glBufferData(GL_UNIFORM_BUFFER, sizeof(lights), lights, GL_DYNAMIC_DRAW);
 
-	GLuint uniformBlockIndex2 = glGetUniformBlockIndex(programId2, "LightBlock");
-	glBindBufferBase(GL_UNIFORM_BUFFER, 0, lightsBufferId2);
-	glUniformBlockBinding(programId2, uniformBlockIndex2, 0);
-
+	GLuint uniformBlockIndex = glGetUniformBlockIndex(programId1, "LightBlock");
+	glBindBufferBase(GL_UNIFORM_BUFFER, 0, lightsBufferId);
+	glUniformBlockBinding(programId1, uniformBlockIndex, 0);
 }
 
-static void initLightCubes() {
+static void initCylinder() {
 
 	vasito = cylinder_create(length, bottomRadius, topRadius, sides, stacks, cb, ct);
 	glUseProgram(programId1);	
@@ -166,6 +122,15 @@ static void initRoom() {
 						 w1, h2, d2, w1, h2, d1, w2, h2, d1,   w2, h2, d1, w2, h2, d2, w1, h2, d2   // Arriba
 	};
 
+	ColorRGB rc = {.r = 0.5, .g = 0.5, .b = 0.7};
+	float colors[] =  {rc.r,rc.g,rc.b, rc.r,rc.g,rc.b,  rc.r,rc.g,rc.b, rc.r,rc.g,rc.b,  rc.r,rc.g,rc.b, rc.r,rc.g,rc.b,
+					   rc.r,rc.g,rc.b, rc.r,rc.g,rc.b,  rc.r,rc.g,rc.b, rc.r,rc.g,rc.b,  rc.r,rc.g,rc.b, rc.r,rc.g,rc.b,
+					   rc.r,rc.g,rc.b, rc.r,rc.g,rc.b,  rc.r,rc.g,rc.b, rc.r,rc.g,rc.b,  rc.r,rc.g,rc.b, rc.r,rc.g,rc.b,
+					   rc.r,rc.g,rc.b, rc.r,rc.g,rc.b,  rc.r,rc.g,rc.b, rc.r,rc.g,rc.b,  rc.r,rc.g,rc.b, rc.r,rc.g,rc.b,
+					   rc.r,rc.g,rc.b, rc.r,rc.g,rc.b,  rc.r,rc.g,rc.b, rc.r,rc.g,rc.b,  rc.r,rc.g,rc.b, rc.r,rc.g,rc.b,
+					   rc.r,rc.g,rc.b, rc.r,rc.g,rc.b,  rc.r,rc.g,rc.b, rc.r,rc.g,rc.b,  rc.r,rc.g,rc.b, rc.r,rc.g,rc.b
+					};
+
 	float normals[] = { 0,  0,  1,  0,  0,  1,  0,  0,  1,  0,  0,  1,  0,  0,  1,  0,  0,  1,  // Frente
 						0,  0, -1,  0,  0, -1,  0,  0, -1,  0,  0, -1,  0,  0, -1,  0,  0, -1,  // Atrás
 					    1,  0,  0,  1,  0,  0,  1,  0,  0,  1,  0,  0,  1,  0,  0,  1,  0,  0,  // Izquierda
@@ -177,8 +142,8 @@ static void initRoom() {
 	glUseProgram(programId1);
 	glGenVertexArrays(1, &roomVA);
 	glBindVertexArray(roomVA);
-	GLuint buffers[2];
-	glGenBuffers(2, buffers);
+	GLuint buffers[3];
+	glGenBuffers(3, buffers);
 
 	glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(positions), positions, GL_STATIC_DRAW);
@@ -189,6 +154,11 @@ static void initRoom() {
 	glBufferData(GL_ARRAY_BUFFER, sizeof(normals), normals, GL_STATIC_DRAW);
 	glVertexAttribPointer(vertexNormalLoc, 3, GL_FLOAT, 0, 0, 0);
 	glEnableVertexAttribArray(vertexNormalLoc);
+
+	glBindBuffer(GL_ARRAY_BUFFER, buffers[2]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(colors), colors, GL_STATIC_DRAW);
+	glVertexAttribPointer(vertexColorLoc, 3, GL_FLOAT, 0, 0, 0);
+	glEnableVertexAttribArray(vertexColorLoc);
 }
 
 static void displayFunc() {
@@ -229,38 +199,19 @@ static void displayFunc() {
 	glUniformMatrix4fv(viewMatrixLoc, 1, true, viewMatrix.values);
 	glUniform3f(cameraPositionLoc, cameraX, 0, cameraZ);
 
-
 	//	Dibujar el cuarto
 	mIdentity(&modelMatrix);
 	glUniformMatrix4fv(modelMatrixLoc, 1, true, modelMatrix.values);
 	glBindVertexArray(roomVA);
 	glDrawArrays(GL_TRIANGLES, 0, 36);
 
-	// Dibujar cilindro movible
-	mIdentity(&modelMatrix);
-	translate(&modelMatrix, greenLightX, greenLightY, greenLightZ);
-	static int angle = 0;
-	rotateX(&modelMatrix, angle += 1);
-	glUniformMatrix4fv(modelMatrixLoc2, 1, true, modelMatrix.values);
-	cylinder_draw(vasito);
-
-	//	Envío de proyección y vista al programa 2
-	glUseProgram(programId2);
-	glUniformMatrix4fv(projectionMatrixLoc2, 1, true, projectionMatrix.values);
-	mIdentity(&viewMatrix);
-	rotateY(&viewMatrix, -cameraAngle);
-	translate(&viewMatrix, -cameraX, 0, -cameraZ);
-	glUniformMatrix4fv(viewMatrixLoc2, 1, true, viewMatrix.values);
-	glUniform3f(cameraPositionLoc2, cameraX, 0, cameraZ);
-
 	// // Dibujar cilindro movible
 	// mIdentity(&modelMatrix);
 	// translate(&modelMatrix, greenLightX, greenLightY, greenLightZ);
 	// static int angle = 0;
 	// rotateX(&modelMatrix, angle += 1);
-	// glUniformMatrix4fv(modelMatrixLoc2, 1, true, modelMatrix.values);
+	// glUniformMatrix4fv(modelMatrixLoc, 1, true, modelMatrix.values);
 	// cylinder_draw(vasito);
-
 	glutSwapBuffers();
 }
 
@@ -340,7 +291,7 @@ int main(int argc, char **argv) {
     
 	initShaders();
     initLights();
-    initLightCubes();
+    // initCylinder();
     initRoom();
     
 	glClearColor(0.1, 0.1, 0.1, 1.0);
