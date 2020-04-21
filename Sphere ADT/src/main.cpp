@@ -3,10 +3,16 @@
 #include "transforms.h"
 #include "utils.h"
 #include "cylinder.h"
+#include "sphere.h"
 #include <stdio.h>
 #include <math.h>
 #include <vector>
 #include <time.h>
+
+Sphere pelota;
+float radius = 1.5;
+short meridians = 30, parallels = 9;
+ColorRGB colorBase = {.r = 0.8, .g = 0.3, .b = 0.8 };
 
 Cylinder vasito;
 float length, topRadius, bottomRadius;
@@ -109,6 +115,13 @@ static void initCylinder() {
 
 }
 
+static void initSphere() {
+	pelota = sphere_create(radius, meridians, parallels, colorBase);
+	glUseProgram(programId1);
+	sphere_bind(pelota, vertexPositionLoc, vertexColorLoc, vertexNormalLoc);
+	
+}
+
 static void initRoom() {
 	float w1 = -ROOM_WIDTH  / 2, w2 = ROOM_WIDTH  / 2;
 	float h1 = -ROOM_HEIGHT / 2, h2 = ROOM_HEIGHT / 2;
@@ -205,6 +218,14 @@ static void displayFunc() {
 	glBindVertexArray(roomVA);
 	glDrawArrays(GL_TRIANGLES, 0, 36);
 
+	// Dibujar esfera movible
+	mIdentity(&modelMatrix);
+	translate(&modelMatrix, greenLightX, greenLightY, greenLightZ);
+	static int angle = 0;
+	rotateX(&modelMatrix, angle += 1);
+	glUniformMatrix4fv(modelMatrixLoc, 1, true, modelMatrix.values);
+	sphere_draw(pelota);
+
 	// // Dibujar cilindro movible
 	// mIdentity(&modelMatrix);
 	// translate(&modelMatrix, greenLightX, greenLightY, greenLightZ);
@@ -292,6 +313,7 @@ int main(int argc, char **argv) {
 	initShaders();
     initLights();
     // initCylinder();
+	initSphere();
     initRoom();
     
 	glClearColor(0.1, 0.1, 0.1, 1.0);
