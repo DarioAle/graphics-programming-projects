@@ -18,22 +18,22 @@ Sphere sphere_create(float radius, short meridians, short parallels, ColorRGB ba
 
 float* generateVertexCoord(Sphere sph, int& size)
 {
-    float theta = 0;
-	float phi 	= 0;
+    float theta = 0.0;
+	float phi 	= 0.0;
 
-    const float thetaIncrement = 2 * M_PI / sph->meridians;
-	const float phiIncrement   = M_PI / sph->parallels;
+    float thetaIncrement = 2 * M_PI / (float)sph->meridians;
+	float phiIncrement   = M_PI / (float)sph->parallels;
     
+
     size = ((sph->meridians + 1) * 3) * sph->parallels * 2;
     float* sphCoord = new float[size];
-	printf("size: %d\n", size);
-
+	
     int j;
     int posIndex = 0;
 
     for(j = 0; j < sph->parallels; ++j, phi += phiIncrement) 
 	{
-		theta = 0;
+		theta = 0.0;
 		for(int i = 0; i < sph->meridians + 1; ++i, theta += thetaIncrement, ++posIndex) 
 		{
 			sphCoord[posIndex * 6]     = sph->radius * sin(phi)  * cos(theta);
@@ -46,7 +46,6 @@ float* generateVertexCoord(Sphere sph, int& size)
 			sphCoord[posIndex * 6 + 5] = sph->radius * sin(tempPhi) * sin(theta);
 		}
 	}
-
     return sphCoord;
 }
 
@@ -83,18 +82,10 @@ float* generateVertexColor(Sphere sph, int& size)
     return sphColor;
 }
 
-float* generateVertexNormals(Sphere sph, int& size, float*) 
-{
-    size = ((sph->meridians + 1) * 3) * sph->parallels;
-    float* sphNormal = new float[size];
-
-    return sphNormal;
-}
-
-GLushort* generateVertexIndices(Sphere sph, int& size) 
+GLuint* generateVertexIndices(Sphere sph, int& size) 
 {
     size = ((sph->meridians + 1) * 3) * (sph->parallels *  2) + sph->parallels;
-    GLushort* sphIndices = new GLushort[size];
+    GLuint* sphIndices = new GLuint[size];
 
 	int indIndex = 0;
 	int j;
@@ -115,11 +106,11 @@ void sphere_bind(Sphere sph, uint posLoc , uint colLoc, uint normLoc )
 	uint bufferId[4];
 	GLuint va;
 
-    int coorSize, colorSize, normSize, indSize;
+    int coorSize, colorSize, indSize;
     float* sphCoor       = generateVertexCoord(sph, coorSize);
 	float* sphColor 	 = generateVertexColor(sph, colorSize);
-	// float* sphNorm	     = generateVertexNormals(sph, normSize, sphCoor);
-	GLushort* sphIndices = generateVertexIndices(sph, indSize);
+	GLuint* sphIndices = generateVertexIndices(sph, indSize);
+	
 
     glGenVertexArrays(1, &va);
 	glBindVertexArray(va);
@@ -136,13 +127,13 @@ void sphere_bind(Sphere sph, uint posLoc , uint colLoc, uint normLoc )
 	glVertexAttribPointer(colLoc, 3, GL_FLOAT, 0, 0, 0);
 	glEnableVertexAttribArray(colLoc);
 
-	// glBindBuffer(GL_ARRAY_BUFFER, bufferId[2]);
-	// glBufferData(GL_ARRAY_BUFFER, normSize * sizeof(float), sphNorm, GL_STATIC_DRAW);
-	// glVertexAttribPointer(normLoc, 3, GL_FLOAT, 0, 0, 0);
-	// glEnableVertexAttribArray(normLoc);
+	glBindBuffer(GL_ARRAY_BUFFER, bufferId[2]);
+	glBufferData(GL_ARRAY_BUFFER, coorSize * sizeof(float), sphCoor, GL_STATIC_DRAW);
+	glVertexAttribPointer(normLoc, 3, GL_FLOAT, 0, 0, 0);
+	glEnableVertexAttribArray(normLoc);
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bufferId[3]);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indSize * sizeof(float), sphIndices, GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indSize * sizeof(int), sphIndices, GL_STATIC_DRAW);
 
 	sph->indexBuffLoc = bufferId[3];
 	sph->vertexArray = va;
@@ -155,7 +146,7 @@ void sphere_draw(Sphere sph)
 {
     glBindVertexArray(sph->vertexArray);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sph->indexBuffLoc);
-	glDrawElements(GL_TRIANGLE_STRIP, (sph->meridians + 1) * (sph->parallels * 2) + sph->parallels, GL_UNSIGNED_SHORT, 0);
+	glDrawElements(GL_TRIANGLE_STRIP, (sph->meridians + 1) * (sph->parallels * 2) + sph->parallels, GL_UNSIGNED_INT, 0);
 
 }
 

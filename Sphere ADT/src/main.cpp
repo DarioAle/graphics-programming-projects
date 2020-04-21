@@ -9,10 +9,14 @@
 #include <vector>
 #include <time.h>
 
+
+bool changeDirectionFlag = false;
+vec3 directionVector = {0.0, 0.0, 0.0};
+
 Sphere pelota;
-float radius = 1.5;
-short meridians = 30, parallels = 9;
-ColorRGB colorBase = {.r = 0.8, .g = 0.3, .b = 0.8 };
+float radius = 0.3;
+short meridians = 40, parallels = 40;
+ColorRGB colorBase = {.r = 0.3, .g = 0.8, .b = 0.3 };
 
 Cylinder vasito;
 float length, topRadius, bottomRadius;
@@ -44,7 +48,7 @@ static float cameraAngle     = 0;
 static float greenLightX     = 0;
 static float greenLightY     = 0;
 static float greenLightZ     = 0;
-static float greenLightSpeed = 0.10;
+static float greenLightSpeed = 0.1;
 
 static const int ROOM_WIDTH  = 12;
 static const int ROOM_HEIGHT =  6;
@@ -62,6 +66,22 @@ static float lights[]   = { 1, 1, 1,  0.8660,   -1, 0, 0,  128,	 -1, 0,  0,   0.
 		                    1, 1, 1,  0.9238,    2, 0, 0,  128,   1, 0,  0,	  0.7071    // Luz Azul
 };
 static GLuint lightsBufferId, lightsBufferId2;
+
+void normalize(vec3 v) 
+{
+	float magnitude = sqrt(  v[0] * v[0] +
+							 v[1] * v[1] + 
+						 	 v[2] * v[2]);
+	// make unitary the direction vector
+	v[0] /= magnitude;
+	v[1] /= magnitude;
+	v[2] /= magnitude;
+} 
+
+float dot(vec3 v1, vec3 v2) 
+{
+	return v1[0] * v2[0] + v1[1] * v2[1] * v1[2] * v2[2];
+}
 
 static void initShaders() {
 	GLuint vShader = compileShader("shaders/phong.vsh", GL_VERTEX_SHADER);
@@ -174,7 +194,103 @@ static void initRoom() {
 	glEnableVertexAttribArray(vertexColorLoc);
 }
 
+void check_colissions() 
+{
+		
+	float dist = pelota->radius;
+	float w1 = -ROOM_WIDTH  / 2 + dist, w2 = ROOM_WIDTH  / 2 - dist;
+	float h1 = -ROOM_HEIGHT / 2 + dist, h2 = ROOM_HEIGHT / 2 - dist;
+	float d1 = -ROOM_DEPTH  / 2 + dist, d2 = ROOM_DEPTH  / 2 - dist;
+	
+	// To do calculate reflected ray for this normal
+	// r = 2n (n ° l) -
+	// r is the reflected ray, in this case must be the new direction vector
+	if(greenLightX <  w1) {
+		printf("collided with left wall\n");
+		// vec3 nLeft = {1, 0, 0}; // points to right
+		// float temp = dot(nLeft, directionVector) * 2.0;
+		// nLeft[0] *= temp;
+		// nLeft[1] *= temp;
+		// nLeft[2] *= temp;
+		// directionVector[0]  = directionVector[0] - nLeft[0];
+		// directionVector[1]  = directionVector[1] - nLeft[1];
+		// directionVector[2]  = directionVector[2] - nLeft[2];
+		directionVector[0] *= -1;
+		printf("New direction: %.4f %.4f %.4f\n", directionVector[0], directionVector[1], directionVector[2]);
+	} else if(greenLightX > w2) {
+		printf("collided with right wall\n");
+		// vec3 nRight = {-1, 0, 0}; // points to left
+		// float temp = dot(nRight, directionVector) * 2.0;
+		// nRight[0] *= temp;
+		// nRight[1] *= temp;
+		// nRight[2] *= temp;
+
+		// directionVector[0]  = directionVector[0] - nRight[0];
+		// directionVector[1]  = directionVector[1] - nRight[1];
+		// directionVector[2]  = directionVector[2] - nRight[2];
+		directionVector[0] *= -1;
+		printf("New direction: %.4f %.4f %.4f\n", directionVector[0], directionVector[1], directionVector[2]);
+	} 
+	else if(greenLightY < h1) {
+		printf("collided with floor\n");
+		// vec3 nDown = {0, 1, 0}; // points upward
+		// float temp = dot(nDown, directionVector) * 2.0;
+		// nDown[0] *= temp;
+		// nDown[1] *= temp;
+		// nDown[2] *= temp;
+	
+		// directionVector[0]  = directionVector[0] - nDown[0];
+		// directionVector[1]  = directionVector[1] - nDown[1];
+		// directionVector[2]  = directionVector[2] - nDown[2];
+		directionVector[1] *= -1;
+		printf("New direction: %.4f %.4f %.4f\n", directionVector[0], directionVector[1], directionVector[2]);
+	}
+	else if(greenLightY > h2) {
+		printf("Collided with Ceiling\n");
+		// vec3 nUp = {0, -1, 0}; // points downwards
+		// float temp = dot(nUp, directionVector) * 2.0;
+		// nUp[0] *= temp;
+		// nUp[1] *= temp;
+		// nUp[2] *= temp;
+	
+		// directionVector[0]  = directionVector[0] - nUp[0];
+		// directionVector[1]  = directionVector[1] - nUp[1];
+		// directionVector[2]  = directionVector[2] - nUp[2];
+		printf("New direction: %.4f %.4f %.4f\n", directionVector[0], directionVector[1], directionVector[2]);
+		directionVector[1] *= -1;
+	}else if(greenLightZ < d1) {
+		printf("Collided with back wall\n");
+		// vec3 nBack = {0, 0, 1}; // points to front
+		// float temp = dot(nBack, directionVector) * 2.0;
+		// nBack[0] *= temp;
+		// nBack[1] *= temp;
+		// nBack[2] *= temp;
+	
+		// directionVector[0]  = directionVector[0] - nBack[0];
+		// directionVector[1]  = directionVector[1] - nBack[1];
+		// directionVector[2]  = directionVector[2] - nBack[2];
+		directionVector[2] *= -1;
+		printf("New direction: %.4f %.4f %.4f\n", directionVector[0], directionVector[1], directionVector[2]);
+	}else if(greenLightZ > d2) {
+		printf("Collided with front wall\n");
+		// vec3 nFront = {0, 0, -1}; // points to back
+		// float temp = dot(nFront, directionVector) * 2.0;
+		// nFront[0] *= temp;
+		// nFront[1] *= temp;
+		// nFront[2] *= temp;
+	
+		// directionVector[0]  = directionVector[0] - nFront[0];
+		// directionVector[1]  = directionVector[1] - nFront[1];
+		// directionVector[2]  = directionVector[2] - nFront[2];
+		directionVector[2] *= -1;
+		printf("New direction: %.4f %.4f %.4f\n", directionVector[0], directionVector[1], directionVector[2]);
+	}
+
+	// printf("New Direction: %.4f, %.4f, %.4f", directionVector[0], directionVector[1], directionVector[2]);
+}
+
 static void displayFunc() {
+	srand(time(0));
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	//	Actualizar posición de la cámara
@@ -182,6 +298,23 @@ static void displayFunc() {
 	float w1 = -ROOM_WIDTH  / 2 + dist, w2 = ROOM_WIDTH  / 2 - dist;
 	float h1 = -ROOM_HEIGHT / 2 + dist, h2 = ROOM_HEIGHT / 2 - dist;
 	float d1 = -ROOM_DEPTH  / 2 + dist, d2 = ROOM_DEPTH  / 2 - dist;
+	
+	if(changeDirectionFlag) 
+	{
+		changeDirectionFlag = false;
+		directionVector[0]  =  cos(to_radians((rand() % 181) * 1.0));
+		directionVector[1]  =  cos(to_radians((rand() % 181) * 1.0));
+		directionVector[2]  =  cos(to_radians((rand() % 181) * 1.0));
+
+		normalize(directionVector);
+
+		// negate direction vector to mimic it goes from the 
+		// wall about to collide instead to it.
+
+		printf("Rand direction: %.4f, %.4f, %.4f\n", directionVector[0], directionVector[1], directionVector[2]);
+		
+	}
+
 	switch(motionType) {
   		case  LEFT  :  if(cameraX - cameraSpeed >  w1) cameraX -= cameraSpeed; break;
   		case  RIGHT :  if(cameraX + cameraSpeed <  w2) cameraX += cameraSpeed; break;
@@ -192,14 +325,14 @@ static void displayFunc() {
 		case  IDLE  :  ;
 	}
 
-	//	Actualizar posición de la fuente de luz verde
+	//	Actualizar posición de laesfera
 	switch(lightMotionType) {
-		case  LEFT  :  if(greenLightX - greenLightSpeed >  w1) greenLightX -= greenLightSpeed; break;
-		case  RIGHT :  if(greenLightX + greenLightSpeed <  w2) greenLightX += greenLightSpeed; break;
-		case  UP    :  if(greenLightY + greenLightSpeed <  h2) greenLightY += greenLightSpeed; break;
-		case  DOWN  :  if(greenLightY - greenLightSpeed >  h1) greenLightY -= greenLightSpeed; break;
-		case  FRONT :  if(greenLightZ - greenLightSpeed >  d1) greenLightZ -= greenLightSpeed; break;
-		case  BACK  :  if(greenLightZ + greenLightSpeed <  d2) greenLightZ += greenLightSpeed; break;
+		case  LEFT  :  if(greenLightX - pelota->radius - greenLightSpeed >  w1) greenLightX -= greenLightSpeed; break;
+		case  RIGHT :  if(greenLightX + pelota->radius + greenLightSpeed <  w2) greenLightX += greenLightSpeed; break;
+		case  UP    :  if(greenLightY + pelota->radius + greenLightSpeed <  h2) greenLightY += greenLightSpeed; break;
+		case  DOWN  :  if(greenLightY - pelota->radius - greenLightSpeed >  h1) greenLightY -= greenLightSpeed; break;
+		case  FRONT :  if(greenLightZ - pelota->radius - greenLightSpeed >  d1) greenLightZ -= greenLightSpeed; break;
+		case  BACK  :  if(greenLightZ + pelota->radius + greenLightSpeed <  d2) greenLightZ += greenLightSpeed; break;
 		case  IDLE  : ;
 	}
 
@@ -218,9 +351,18 @@ static void displayFunc() {
 	glBindVertexArray(roomVA);
 	glDrawArrays(GL_TRIANGLES, 0, 36);
 
+
 	// Dibujar esfera movible
 	mIdentity(&modelMatrix);
+	// to do multiply speed for the unitary direction vector
+
+	greenLightX += directionVector[0] * greenLightSpeed;
+	greenLightY += directionVector[1] * greenLightSpeed;
+	greenLightZ += directionVector[2] * greenLightSpeed;
+	check_colissions();
+	// printf("%.5f, %.5f %.5f\n", greenLightX, greenLightY, greenLightZ);
 	translate(&modelMatrix, greenLightX, greenLightY, greenLightZ);
+	// translate(&modelMatrix, directionVector[0], directionVector);
 	static int angle = 0;
 	rotateX(&modelMatrix, angle += 1);
 	glUniformMatrix4fv(modelMatrixLoc, 1, true, modelMatrix.values);
@@ -279,6 +421,9 @@ static void keyPressedFunc(unsigned char key, int x, int y) {
 		case 'R': lightMotionType = FRONT; break;
 		case 'f':
 		case 'F': lightMotionType = BACK; break;
+		case 'x': 
+		case 'X': changeDirectionFlag = true; break;
+
 		case 27 : exit(0);
 	}
 }
