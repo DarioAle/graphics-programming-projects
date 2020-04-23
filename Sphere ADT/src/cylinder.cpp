@@ -7,8 +7,8 @@
 void crossProduct(vec3 p1, vec3 p2, vec3 p3, vec3 res) {
 	vec3 u = { p2[0] - p1[0], p2[1] - p1[1], p2[2] - p1[2] };
 	vec3 v = { p3[0] - p1[0], p3[1] - p1[1], p3[2] - p1[2] };
-	printf("u: %.4f %.4f %.4f\n", u[0], u[1], u[2]);
-	printf("v: %.4f %.4f %.4f\n", v[0], v[1], v[2]);
+	// printf("u: %.4f %.4f %.4f\n", u[0], u[1], u[2]);
+	// printf("v: %.4f %.4f %.4f\n", v[0], v[1], v[2]);
 	
 
 	res[0] = u[1] * v[2] - u[2] * v[1];
@@ -132,19 +132,19 @@ float* generateVertexNormals(Cylinder vasito, int& size, float* coordArr)
 		vec3 p2 = {coordArr[i * 6 + 3], coordArr[i * 6 + 4], coordArr[i * 6 + 5]};
 		vec3 p3 = {coordArr[i * 6 + 6], coordArr[i * 6 + 7], coordArr[i * 6 + 8]};
 
-		printf("p1: %.4f %.4f %.4f\n", p1[0], p1[1], p1[2]);
-		printf("p2: %.4f %.4f %.4f\n", p2[0], p2[1], p2[2]);
-		printf("p3: %.4f %.4f %.4f\n", p3[0], p3[1], p3[2]);
+		// printf("p1: %.4f %.4f %.4f\n", p1[0], p1[1], p1[2]);
+		// printf("p2: %.4f %.4f %.4f\n", p2[0], p2[1], p2[2]);
+		// printf("p3: %.4f %.4f %.4f\n", p3[0], p3[1], p3[2]);
 
 		vec3 p_res;
 		crossProduct(p1,p2,p3,p_res);
-		printf("p_res: %.4f %.4f %.4f\n", p_res[0], p_res[1], p_res[2]);
+		// printf("p_res: %.4f %.4f %.4f\n", p_res[0], p_res[1], p_res[2]);
 
 		cylinderNormals[i * 3]     = p_res[0];
 		cylinderNormals[i * 3 + 1] = p_res[1];
 		cylinderNormals[i * 3 + 2] = p_res[2];
 
-		printf("\n");
+		// printf("\n");
 	}
 
 	int normIndex = 0;
@@ -164,10 +164,10 @@ float* generateVertexNormals(Cylinder vasito, int& size, float* coordArr)
 	return cylinderNormals;
 }
 
-GLushort* generteVertexIndices(Cylinder vasito, int& size)
+GLuint* generteVertexIndices(Cylinder vasito, int& size)
 {	
 	size = (vasito->stacks * 2) * (vasito->sides + 1) + vasito->stacks;
-	GLushort* circleIndices = new GLushort[size];
+	GLuint* circleIndices = new GLuint[size];
 
 	int indIndex = 0;
 	int j;
@@ -191,7 +191,7 @@ void cylinder_bind(Cylinder vasito, uint posLoc , uint colLoc, uint normLoc )
 	float* newCircle      = generateVertexCoor(vasito, thisSize);
 	float* newCOlorCircle = generateVertexColor(vasito, thisSize2);
 	float* cylinderNorm	  = generateVertexNormals(vasito, thisSize4, newCircle);
-	GLushort* newIndices  = generteVertexIndices(vasito, thisSize3);
+	GLuint* newIndices  = generteVertexIndices(vasito, thisSize3);
 
 	glGenVertexArrays(1, &va);
 	glBindVertexArray(va);
@@ -214,12 +214,12 @@ void cylinder_bind(Cylinder vasito, uint posLoc , uint colLoc, uint normLoc )
 	glEnableVertexAttribArray(normLoc);
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bufferId[3]);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, thisSize3 * sizeof(float), newIndices, GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, thisSize3 * sizeof(int), newIndices, GL_STATIC_DRAW);
 
 	vasito->indexBuffLoc = bufferId[3];
 	vasito->vertexArray = va;
 	glEnable(GL_PRIMITIVE_RESTART);
-	glPrimitiveRestartIndex(0xFFFF);
+	glPrimitiveRestartIndex(0xFFFFFFFF);
 
 }
 
@@ -227,7 +227,7 @@ void cylinder_draw(Cylinder c)
 {
 	glBindVertexArray(c->vertexArray);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, c->indexBuffLoc);
-	glDrawElements(GL_TRIANGLE_STRIP, (c->sides + 1) * (c->stacks * 2) + c->stacks, GL_UNSIGNED_SHORT, 0);
+	glDrawElements(GL_TRIANGLE_STRIP, (c->sides + 1) * (c->stacks * 2) + c->stacks, GL_UNSIGNED_INT, 0);
 
 	glDrawArrays(GL_TRIANGLE_FAN, 0, c->sides * 2);
 	glDrawArrays(GL_TRIANGLE_FAN, (c->sides + 1) * (c->stacks * 2) - (c->sides * 2) , c->sides * 2);

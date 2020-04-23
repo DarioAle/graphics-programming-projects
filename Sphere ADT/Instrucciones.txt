@@ -1,0 +1,8 @@
+Ejercicios Resueltos 1, 2 y 4.
+
+Presionar las flechas para navegar dentro de la habitación.
+Presione las teclas a, w, s, d, r, f para mover el objeto dentro de la habitación
+Presionar 'y' para intercambiar visualización entre cilindro y esfera
+Presionar 'z' para producir un nuevo cilindro aleatorio
+Presionar 'q' para producir una nuva esfera aleatoria
+Presionara 'x' para producir un vector dirección aleatorio para animar el rebote de la esfera.

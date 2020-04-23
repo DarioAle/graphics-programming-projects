@@ -11,6 +11,7 @@
 
 
 bool changeDirectionFlag = false;
+bool drawSphere = true;
 vec3 directionVector = {0.0, 0.0, 0.0};
 
 Sphere pelota;
@@ -48,7 +49,7 @@ static float cameraAngle     = 0;
 static float greenLightX     = 0;
 static float greenLightY     = 0;
 static float greenLightZ     = 0;
-static float greenLightSpeed = 0.1;
+static float particleSpeed = 0.1;
 
 static const int ROOM_WIDTH  = 12;
 static const int ROOM_HEIGHT =  6;
@@ -129,14 +130,33 @@ static void initLights() {
 
 static void initCylinder() {
 
-	vasito = cylinder_create(length, bottomRadius, topRadius, sides, stacks, cb, ct);
+	float l  = ((rand() % 2001) / 1000.0)+ 0.001;
+	float br = ((rand() % 2001) / 1000.0) + 0.001;
+	float tr = ((rand() % 2001) / 1000.0) + 0.001;
+	short s  =  (short)(rand() % 200) + 2;
+	short st =  (short)(rand() % 200) + 2;
+	ColorRGB a = {.r = 0.8, .g = 0.3, .b = 0.8};
+	ColorRGB b = {.r = 0.3, .g = 0.8, .b = 0.3};
+
+	ColorRGB bot = {.r = ((rand() & 255) / 256.0), .g = ((rand() & 255) / 256.0), .b = ((rand() & 255) / 256.0)};
+	ColorRGB top = {.r = ((rand() & 255) / 256.0), .g = ((rand() & 255) / 256.0), .b = ((rand() & 255) / 256.0)};
+	vasito = cylinder_create(l, br, tr, s, st, bot, top);
 	glUseProgram(programId1);	
 	cylinder_bind(vasito, vertexPositionLoc, vertexColorLoc, vertexNormalLoc);
+	// vasito = cylinder_create(length, bottomRadius, topRadius, sides, stacks, cb, ct);
+	// glUseProgram(programId1);	
+	// cylinder_bind(vasito, vertexPositionLoc, vertexColorLoc, vertexNormalLoc);
 
 }
 
 static void initSphere() {
-	pelota = sphere_create(radius, meridians, parallels, colorBase);
+	float r  = ((rand() % 2001) / 1000.0) +0.001;
+	short m  =  (short)(rand() % 40) + 2;
+	short p =   (short)(rand() % 40) + 2;
+	ColorRGB a = {.r = 0.8, .g = 0.3, .b = 0.8};
+	ColorRGB bot = {.r = ((rand() & 255) / 256.0), .g = ((rand() & 255) / 256.0), .b = ((rand() & 255) / 256.0)};
+
+	pelota = sphere_create(r, m, p, bot);
 	glUseProgram(programId1);
 	sphere_bind(pelota, vertexPositionLoc, vertexColorLoc, vertexNormalLoc);
 	
@@ -204,89 +224,32 @@ void check_colissions()
 	
 	// To do calculate reflected ray for this normal
 	// r = 2n (n ° l) -
-	// r is the reflected ray, in this case must be the new direction vector
-	if(greenLightX <  w1) {
-		printf("collided with left wall\n");
-		// vec3 nLeft = {1, 0, 0}; // points to right
-		// float temp = dot(nLeft, directionVector) * 2.0;
-		// nLeft[0] *= temp;
-		// nLeft[1] *= temp;
-		// nLeft[2] *= temp;
-		// directionVector[0]  = directionVector[0] - nLeft[0];
-		// directionVector[1]  = directionVector[1] - nLeft[1];
-		// directionVector[2]  = directionVector[2] - nLeft[2];
-		directionVector[0] *= -1;
-		printf("New direction: %.4f %.4f %.4f\n", directionVector[0], directionVector[1], directionVector[2]);
-	} else if(greenLightX > w2) {
-		printf("collided with right wall\n");
-		// vec3 nRight = {-1, 0, 0}; // points to left
-		// float temp = dot(nRight, directionVector) * 2.0;
-		// nRight[0] *= temp;
-		// nRight[1] *= temp;
-		// nRight[2] *= temp;
+	// r is the reflected ray, in this case must be the new direction vector}
 
-		// directionVector[0]  = directionVector[0] - nRight[0];
-		// directionVector[1]  = directionVector[1] - nRight[1];
-		// directionVector[2]  = directionVector[2] - nRight[2];
+	// printf("collided with left wall\n");
+	// vec3 nLeft = {1, 0, 0}; // points to right
+	// float temp = dot(nLeft, directionVector) * 2.0;
+	// nLeft[0] *= temp;
+	// nLeft[1] *= temp;
+	// nLeft[2] *= temp;
+	// directionVector[0]  = directionVector[0] - nLeft[0];
+	// directionVector[1]  = directionVector[1] - nLeft[1];
+	// directionVector[2]  = directionVector[2] - nLeft[2];
+	// printf("New direction: %.4f %.4f %.4f\n", directionVector[0], directionVector[1], directionVector[2]);
+	if(greenLightX <  w1) {
 		directionVector[0] *= -1;
-		printf("New direction: %.4f %.4f %.4f\n", directionVector[0], directionVector[1], directionVector[2]);
-	} 
-	else if(greenLightY < h1) {
-		printf("collided with floor\n");
-		// vec3 nDown = {0, 1, 0}; // points upward
-		// float temp = dot(nDown, directionVector) * 2.0;
-		// nDown[0] *= temp;
-		// nDown[1] *= temp;
-		// nDown[2] *= temp;
-	
-		// directionVector[0]  = directionVector[0] - nDown[0];
-		// directionVector[1]  = directionVector[1] - nDown[1];
-		// directionVector[2]  = directionVector[2] - nDown[2];
+	} else if(greenLightX > w2) {
+		directionVector[0] *= -1;
+	} else if(greenLightY < h1) {
 		directionVector[1] *= -1;
-		printf("New direction: %.4f %.4f %.4f\n", directionVector[0], directionVector[1], directionVector[2]);
-	}
-	else if(greenLightY > h2) {
-		printf("Collided with Ceiling\n");
-		// vec3 nUp = {0, -1, 0}; // points downwards
-		// float temp = dot(nUp, directionVector) * 2.0;
-		// nUp[0] *= temp;
-		// nUp[1] *= temp;
-		// nUp[2] *= temp;
-	
-		// directionVector[0]  = directionVector[0] - nUp[0];
-		// directionVector[1]  = directionVector[1] - nUp[1];
-		// directionVector[2]  = directionVector[2] - nUp[2];
-		printf("New direction: %.4f %.4f %.4f\n", directionVector[0], directionVector[1], directionVector[2]);
+	}else if(greenLightY > h2) {
 		directionVector[1] *= -1;
 	}else if(greenLightZ < d1) {
-		printf("Collided with back wall\n");
-		// vec3 nBack = {0, 0, 1}; // points to front
-		// float temp = dot(nBack, directionVector) * 2.0;
-		// nBack[0] *= temp;
-		// nBack[1] *= temp;
-		// nBack[2] *= temp;
-	
-		// directionVector[0]  = directionVector[0] - nBack[0];
-		// directionVector[1]  = directionVector[1] - nBack[1];
-		// directionVector[2]  = directionVector[2] - nBack[2];
 		directionVector[2] *= -1;
-		printf("New direction: %.4f %.4f %.4f\n", directionVector[0], directionVector[1], directionVector[2]);
 	}else if(greenLightZ > d2) {
-		printf("Collided with front wall\n");
-		// vec3 nFront = {0, 0, -1}; // points to back
-		// float temp = dot(nFront, directionVector) * 2.0;
-		// nFront[0] *= temp;
-		// nFront[1] *= temp;
-		// nFront[2] *= temp;
-	
-		// directionVector[0]  = directionVector[0] - nFront[0];
-		// directionVector[1]  = directionVector[1] - nFront[1];
-		// directionVector[2]  = directionVector[2] - nFront[2];
 		directionVector[2] *= -1;
-		printf("New direction: %.4f %.4f %.4f\n", directionVector[0], directionVector[1], directionVector[2]);
 	}
 
-	// printf("New Direction: %.4f, %.4f, %.4f", directionVector[0], directionVector[1], directionVector[2]);
 }
 
 static void displayFunc() {
@@ -307,11 +270,7 @@ static void displayFunc() {
 		directionVector[2]  =  cos(to_radians((rand() % 181) * 1.0));
 
 		normalize(directionVector);
-
-		// negate direction vector to mimic it goes from the 
-		// wall about to collide instead to it.
-
-		printf("Rand direction: %.4f, %.4f, %.4f\n", directionVector[0], directionVector[1], directionVector[2]);
+		// printf("Rand direction: %.4f, %.4f, %.4f\n", directionVector[0], directionVector[1], directionVector[2]);
 		
 	}
 
@@ -327,12 +286,12 @@ static void displayFunc() {
 
 	//	Actualizar posición de laesfera
 	switch(lightMotionType) {
-		case  LEFT  :  if(greenLightX - pelota->radius - greenLightSpeed >  w1) greenLightX -= greenLightSpeed; break;
-		case  RIGHT :  if(greenLightX + pelota->radius + greenLightSpeed <  w2) greenLightX += greenLightSpeed; break;
-		case  UP    :  if(greenLightY + pelota->radius + greenLightSpeed <  h2) greenLightY += greenLightSpeed; break;
-		case  DOWN  :  if(greenLightY - pelota->radius - greenLightSpeed >  h1) greenLightY -= greenLightSpeed; break;
-		case  FRONT :  if(greenLightZ - pelota->radius - greenLightSpeed >  d1) greenLightZ -= greenLightSpeed; break;
-		case  BACK  :  if(greenLightZ + pelota->radius + greenLightSpeed <  d2) greenLightZ += greenLightSpeed; break;
+		case  LEFT  :  if(greenLightX - pelota->radius - particleSpeed >  w1) greenLightX -= particleSpeed; break;
+		case  RIGHT :  if(greenLightX + pelota->radius + particleSpeed <  w2) greenLightX += particleSpeed; break;
+		case  UP    :  if(greenLightY + pelota->radius + particleSpeed <  h2) greenLightY += particleSpeed; break;
+		case  DOWN  :  if(greenLightY - pelota->radius - particleSpeed >  h1) greenLightY -= particleSpeed; break;
+		case  FRONT :  if(greenLightZ - pelota->radius - particleSpeed >  d1) greenLightZ -= particleSpeed; break;
+		case  BACK  :  if(greenLightZ + pelota->radius + particleSpeed <  d2) greenLightZ += particleSpeed; break;
 		case  IDLE  : ;
 	}
 
@@ -352,29 +311,31 @@ static void displayFunc() {
 	glDrawArrays(GL_TRIANGLES, 0, 36);
 
 
-	// Dibujar esfera movible
-	mIdentity(&modelMatrix);
-	// to do multiply speed for the unitary direction vector
+	if(drawSphere) 
+	{
+		// Dibujar esfera movible
+		mIdentity(&modelMatrix);
+		// to do multiply speed for the unitary direction vector
+		greenLightX += directionVector[0] * particleSpeed;
+		greenLightY += directionVector[1] * particleSpeed;
+		greenLightZ += directionVector[2] * particleSpeed;
+		check_colissions();
+		translate(&modelMatrix, greenLightX, greenLightY, greenLightZ);
+		// translate(&modelMatrix, directionVector[0], directionVector);
+		static int angle = 0;
+		rotateX(&modelMatrix, angle += 1);
+		glUniformMatrix4fv(modelMatrixLoc, 1, true, modelMatrix.values);
+		sphere_draw(pelota);
+	} else {
+		// Dibujar cilindro movible
+		mIdentity(&modelMatrix);
+		translate(&modelMatrix, greenLightX, greenLightY, greenLightZ);
+		static int angle = 0;
+		rotateX(&modelMatrix, angle += 1);
+		glUniformMatrix4fv(modelMatrixLoc, 1, true, modelMatrix.values);
+		cylinder_draw(vasito);
+	}
 
-	greenLightX += directionVector[0] * greenLightSpeed;
-	greenLightY += directionVector[1] * greenLightSpeed;
-	greenLightZ += directionVector[2] * greenLightSpeed;
-	check_colissions();
-	// printf("%.5f, %.5f %.5f\n", greenLightX, greenLightY, greenLightZ);
-	translate(&modelMatrix, greenLightX, greenLightY, greenLightZ);
-	// translate(&modelMatrix, directionVector[0], directionVector);
-	static int angle = 0;
-	rotateX(&modelMatrix, angle += 1);
-	glUniformMatrix4fv(modelMatrixLoc, 1, true, modelMatrix.values);
-	sphere_draw(pelota);
-
-	// // Dibujar cilindro movible
-	// mIdentity(&modelMatrix);
-	// translate(&modelMatrix, greenLightX, greenLightY, greenLightZ);
-	// static int angle = 0;
-	// rotateX(&modelMatrix, angle += 1);
-	// glUniformMatrix4fv(modelMatrixLoc, 1, true, modelMatrix.values);
-	// cylinder_draw(vasito);
 	glutSwapBuffers();
 }
 
@@ -408,6 +369,7 @@ static void specialKeyPressedFunc(int key, int x, int y) {
 }
 
 static void keyPressedFunc(unsigned char key, int x, int y) {
+	srand(time(0));
 	switch(key) {
 		case 'a':
 		case 'A': lightMotionType = LEFT; break;
@@ -423,7 +385,12 @@ static void keyPressedFunc(unsigned char key, int x, int y) {
 		case 'F': lightMotionType = BACK; break;
 		case 'x': 
 		case 'X': changeDirectionFlag = true; break;
-
+		case 'y': 
+		case 'Y': drawSphere = !drawSphere; break;
+		case 'z': 
+		case 'Z': initCylinder();break; 
+		case 'q':
+		case 'Q': initSphere(); break;			
 		case 27 : exit(0);
 	}
 }
@@ -433,11 +400,16 @@ int main(int argc, char **argv) {
 	// scanf("%f %f %f", &length, &topRadius, &bottomRadius);
 	// printf("sides and stacks: \n");
 	// scanf("%d %d", &sides, &stacks);
+	
+	printf("\n\n\nInstrucciones: \n");
+	printf("Presione las flechas para navegar dentro de la habitacion\n");
+	printf("Presiones las teclas a,w,s,d,r,f pra mover el objeto\n");
+	printf("Presione \'y\' para intercambiar visualizacion entre cilindro y esfera\n");
+	printf("Presione \'z\' para producir un nuevo cilindro\n");
+	printf("Presione \'q\' para producir una nueva esferas\n");
+	printf("Presione \'x\' para producir un vecotr direccion aleatorio para animarla esfera\n\n\n");
 
-	length = 2.0; topRadius = 1.0; bottomRadius = 0.5;
-	sides = 6; stacks = 8;
-
-
+	getchar(); 
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_DEPTH);
     glutInitWindowSize(800, 600);
@@ -457,7 +429,7 @@ int main(int argc, char **argv) {
     
 	initShaders();
     initLights();
-    // initCylinder();
+    initCylinder();
 	initSphere();
     initRoom();
     
