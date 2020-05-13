@@ -1,4 +1,4 @@
-#version 330
+#version 400
 
 in vec3 worldVertexPosition;
 in vec3 worldVertexNormal;
@@ -58,6 +58,6 @@ void main() {
       tempPixelColor += factorDeg * factorAtt * lights[i].lightColor * (materialD * factorD + materialS * factorS);
    }
    
-   pixelColor = vec4(clamp(tempPixelColor, 0, 1), 1) * vertexColorToFS;
+   pixelColor = vec4(clamp(tempPixelColor, 0, 1), 1) * vec4(vertexColorToFS,1);
 }
 
