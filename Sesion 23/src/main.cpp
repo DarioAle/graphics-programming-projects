@@ -49,7 +49,7 @@ Box boxArray[BOX_COUNT];
 
 static bool intersectRayBox(Vec3 ray_origin, Vec3 ray_direction, Box box) {
 	// ************************
-	//	Calcular límites (x1, y1, z1), (x2, y2, z2) de la caja
+	//	Calcular lï¿½mites (x1, y1, z1), (x2, y2, z2) de la caja
 	float x1 = box.position.x - box.dimensions.x / 2;
 	float x2 = box.position.x + box.dimensions.x / 2;
 	float y1 = box.position.y - box.dimensions.y / 2;
@@ -57,7 +57,7 @@ static bool intersectRayBox(Vec3 ray_origin, Vec3 ray_direction, Box box) {
 	float z1 = box.position.z - box.dimensions.z / 2;
 	float z2 = box.position.z + box.dimensions.z / 2;
 
-	// Calcular momento de cruce del rayo con cada límite de la caja
+	// Calcular momento de cruce del rayo con cada lï¿½mite de la caja
 	float tx1 = (x1 - ray_origin.x) / ray_direction.x;					// tx = [ 7, 15]
 	float tx2 = (x2 - ray_origin.x) / ray_direction.x;					// ty = [10, 14]
 	float ty1 = (y1 - ray_origin.y) / ray_direction.y;					// tz = [12, 19]
@@ -91,7 +91,7 @@ static void mouseFunc(int button, int state, int mx, int my) {
 //	printf("Normalizado: %.2f, %.2f\n", nx, ny);
 	Vec4 rayN = { nx, ny, -1, 1 };
 
-	// (desproyectar) Obtener coordenadas en el sistema de la cámara
+	// (desproyectar) Obtener coordenadas en el sistema de la cï¿½mara
 	Mat4 invProjectionMatrix;
 	inverse(projectionMatrix, &invProjectionMatrix);
 	Vec4 rayV;
@@ -109,7 +109,7 @@ static void mouseFunc(int button, int state, int mx, int my) {
 	vec4_normalize(&rayM);
 	printf("Mundo: %.2f, %.2f, %.2f\n", rayM.x, rayM.y, rayM.z);
 
-	// Obtener la caja más cercana con quien hubo colisión
+	// Obtener la caja mï¿½s cercana con quien hubo colisiï¿½n
 	Vec3 ray_origin = { cameraX, cameraY, cameraZ };
 	Vec3 ray_direction = { rayM.x, rayM.y, rayM.z };
 	int min_index = -1;
@@ -154,7 +154,7 @@ static void initShaders() {
 static void initCube() {
 	float l1 = -0.5, l2 = 0.5;
 	float positions[] = {l1, l1, l2, l2, l1, l2, l1, l2, l2, l2, l1, l2, l2, l2, l2, l1, l2, l2,  // Frente
-						 l2, l1, l1, l1, l1, l1, l2, l2, l1, l1, l1, l1, l1, l2, l1, l2, l2, l1,  // Atrás
+						 l2, l1, l1, l1, l1, l1, l2, l2, l1, l1, l1, l1, l1, l2, l1, l2, l2, l1,  // Atrï¿½s
 						 l1, l1, l1, l1, l1, l2, l1, l2, l1, l1, l1, l2, l1, l2, l2, l1, l2, l1,  // Izquierda
 						 l2, l2, l1, l2, l2, l2, l2, l1, l1, l2, l2, l2, l2, l1, l2, l2, l1, l1,  // Derecha
 						 l1, l1, l1, l2, l1, l1, l1, l1, l2, l2, l1, l1, l2, l1, l2, l1, l1, l2,  // Abajo
@@ -162,7 +162,7 @@ static void initCube() {
 	};
 
 	float normals[] = { 0,  0,  1,  0,  0,  1,  0,  0,  1,  0,  0,  1,  0,  0,  1,  0,  0,  1,  // Frente
-						0,  0, -1,  0,  0, -1,  0,  0, -1,  0,  0, -1,  0,  0, -1,  0,  0, -1,  // Atrás
+						0,  0, -1,  0,  0, -1,  0,  0, -1,  0,  0, -1,  0,  0, -1,  0,  0, -1,  // Atrï¿½s
 					   -1,  0,  0, -1,  0,  0, -1,  0,  0, -1,  0,  0, -1,  0,  0, -1,  0,  0,  // Izquierda
 					    1,  0,  0,  1,  0,  0,  1,  0,  0,  1,  0,  0,  1,  0,  0,  1,  0,  0,  // Derecha
 					    0, -1,  0,  0, -1,  0,  0, -1,  0,  0, -1,  0,  0, -1,  0,  0, -1,  0,  // Abajo
@@ -306,6 +306,7 @@ int main(int argc, char **argv) {
 	glutInitWindowSize(600, 500);
 	glutInitWindowPosition(100, 100);
 	glutCreateWindow("Mi primera experiencia con Mouse Picking");
+	
 	glutDisplayFunc(displayFunc);
 	glutKeyboardFunc(keyPressedFunc);
     glutKeyboardUpFunc(keyReleasedFunc);
@@ -314,6 +315,7 @@ int main(int argc, char **argv) {
     glutReshapeFunc(reshapeFunc);
     glutTimerFunc(10, timerFunc, 1);
     glutMouseFunc(mouseFunc);
+	
     glewInit();
     initShaders();
     initCube();
